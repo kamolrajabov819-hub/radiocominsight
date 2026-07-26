@@ -10,9 +10,15 @@ type AuthorizationDetails = {
 };
 
 type OAuthApi = {
-  getAuthorizationDetails: (id: string) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
-  approveAuthorization: (id: string) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
-  denyAuthorization: (id: string) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
+  getAuthorizationDetails: (
+    id: string,
+  ) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
+  approveAuthorization: (
+    id: string,
+  ) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
+  denyAuthorization: (
+    id: string,
+  ) => Promise<{ data: AuthorizationDetails | null; error: { message: string } | null }>;
 };
 
 function oauthApi(): OAuthApi {
@@ -44,10 +50,10 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   errorComponent: ({ error }) => (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md rounded-lg border border-border bg-card p-6 text-sm">
-        <h1 className="text-base font-semibold text-foreground">Could not load this authorization request</h1>
-        <p className="mt-2 text-muted-foreground">
-          {String((error as Error)?.message ?? error)}
-        </p>
+        <h1 className="text-base font-semibold text-foreground">
+          Could not load this authorization request
+        </h1>
+        <p className="mt-2 text-muted-foreground">{String((error as Error)?.message ?? error)}</p>
       </div>
     </main>
   ),
@@ -90,7 +96,8 @@ function Consent() {
           Connect {clientName} to Radiocom Analytics Hub
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This lets {clientName} use this app's tools as you. It does not bypass this app's permissions or backend policies.
+          This lets {clientName} use this app's tools as you. It does not bypass this app's
+          permissions or backend policies.
         </p>
         {details?.client?.redirect_uri && (
           <p className="mt-3 text-xs text-muted-foreground">
@@ -105,7 +112,11 @@ function Consent() {
           </ul>
         )}
 
-        {error && <p className="mt-3 text-sm text-destructive" role="alert">{error}</p>}
+        {error && (
+          <p className="mt-3 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex gap-2">
           <button

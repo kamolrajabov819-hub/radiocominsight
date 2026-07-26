@@ -1,168 +1,570 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { DollarSign, Eye, MousePointerClick, Target, TrendingDown } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { KpiCard } from "@/components/kpi-card";
+import { StatTile, StatRow } from "@/components/stat";
 import { ExportButton } from "@/components/export-button";
+import { ChartFrame } from "@/components/chart-frame";
+import { Panel, PanelHeader, SectionRule } from "@/components/panel";
+import { AiPanel } from "@/components/ai-panel";
+import {
+  CHANNEL_COLOR,
+  ChartTooltip,
+  Donut,
+  Grid,
+  HBarRanking,
+  StageBars,
+  SERIES,
+  lineCursor,
+  surfaceStroke,
+  xAxisProps,
+  yAxisProps,
+} from "@/components/charts";
 import { useData } from "@/lib/data-context";
-import { cpc, cpl, ctr, filterByPeriod, fmtDecimal, fmtInt, fmtMoney, fmtPct, sumGoogle, sumMeta } from "@/lib/metrics";
-import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
-import { DollarSign, Target, TrendingDown, TrendingUp, Users, Sparkles } from "lucide-react";
-import { analyzeInsights } from "@/lib/ai.functions";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-import { Button } from "@/components/ui/button";
+import {
+  cpc,
+  cpl,
+  ctr,
+  delta,
+  filterByQuarter,
+  fmtCompact,
+  fmtDecimal,
+  fmtInt,
+  fmtMoney,
+  fmtPct,
+  sumGoogle,
+  sumMeta,
+} from "@/lib/metrics";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Overview — Radiocom Analytics Hub" },
-      { name: "description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
-      { property: "og:title", content: "Overview — Radiocom Analytics Hub" },
-      { property: "og:description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
+      { title: "Cross-channel — Radiocom Insight" },
+      {
+        name: "description",
+        content:
+          "Blended view of Radiocom marketing performance across Meta Ads, Google Ads, OLX and organic social.",
+      },
+      { property: "og:title", content: "Cross-channel — Radiocom Insight" },
+      {
+        property: "og:description",
+        content: "Blended cross-channel marketing performance for Radiocom.",
+      },
     ],
   }),
   component: Overview,
 });
 
+const CHANNELS = ["Meta Ads", "Google Ads", "OLX"] as const;
+
 function Overview() {
-  const { data, period } = useData();
-  const meta = filterByPeriod(data.meta, period);
-  const google = filterByPeriod(data.google, period);
-  const m = sumMeta(meta);
-  const g = sumGoogle(google);
-  const olxLeads = data.olx.reduce((a, r) => a + r.phoneClicks, 0);
-  const olxImp = data.olx.reduce((a, r) => a + r.views, 0);
+  const { data, quarters, quarter, previousQuarter } = useData();
 
-  const totalSpend = m.spend + g.cost;
-  const totalLeads = m.leads + g.conversions + olxLeads;
-  const totalImp = m.impressions + g.impressions + olxImp;
-  const blendedCpl = cpl(totalSpend, totalLeads);
+  /** Channel roll-up for an arbitrary quarter (null = all time). */
+  const rollup = useMemo(() => {
+    return (key: string | null) => {
+      const m = sumMeta(filterByQuarter(data.meta, key));
+      const g = sumGoogle(filterByQuarter(data.google, key));
+      // OLX listing counters are lifetime totals — they are only meaningful
+      // in the all-time view, so they stay out of a single-quarter blend.
+      const includeOlx = key === null;
+      const olxViews = includeOlx ? data.olx.reduce((a, p) => a + p.views, 0) : 0;
+      const olxCalls = includeOlx ? data.olx.reduce((a, p) => a + p.phoneClicks, 0) : 0;
 
-  const channels = [
-    { name: "Meta Ads", spend: m.spend, conversions: m.leads, impressions: m.impressions, clicks: m.clicks },
-    { name: "Google Ads", spend: g.cost, conversions: g.conversions, impressions: g.impressions, clicks: g.clicks },
-    { name: "OLX", spend: 0, conversions: olxLeads, impressions: olxImp, clicks: olxLeads },
+      const channels = [
+        {
+          name: "Meta Ads" as const,
+          spend: m.spend,
+          conversions: m.leads,
+          impressions: m.impressions,
+          clicks: m.clicks,
+        },
+        {
+          name: "Google Ads" as const,
+          spend: g.cost,
+          conversions: g.conversions + g.phoneCalls,
+          impressions: g.impressions,
+          clicks: g.clicks,
+        },
+        {
+          name: "OLX" as const,
+          spend: 0,
+          conversions: olxCalls,
+          impressions: olxViews,
+          clicks: olxCalls,
+        },
+      ].map((c) => ({
+        ...c,
+        color: CHANNEL_COLOR[c.name],
+        cpl: c.spend > 0 && c.conversions > 0 ? c.spend / c.conversions : 0,
+        ctr: ctr(c.clicks, c.impressions),
+      }));
+
+      const spend = channels.reduce((a, c) => a + c.spend, 0);
+      const conversions = channels.reduce((a, c) => a + c.conversions, 0);
+      const impressions = channels.reduce((a, c) => a + c.impressions, 0);
+      const clicks = channels.reduce((a, c) => a + c.clicks, 0);
+
+      return { m, g, channels, spend, conversions, impressions, clicks, includeOlx };
+    };
+  }, [data]);
+
+  const now = rollup(quarter?.key ?? null);
+  const prev = previousQuarter ? rollup(previousQuarter.key) : null;
+  const blendedCpl = cpl(now.spend, now.conversions);
+  const deltaSuffix = previousQuarter ? `vs ${previousQuarter.short}` : undefined;
+
+  /** Per-quarter series drive both the trend charts and the sparklines. */
+  const byQuarter = useMemo(
+    () =>
+      quarters.map((q) => {
+        const r = rollup(q.key);
+        return {
+          label: q.short,
+          quarter: q.key,
+          "Meta Ads": r.channels[0].spend,
+          "Google Ads": r.channels[1].spend,
+          metaLeads: r.channels[0].conversions,
+          googleLeads: r.channels[1].conversions,
+          spend: r.spend,
+          leads: r.conversions,
+          impressions: r.impressions,
+          clicks: r.clicks,
+          cpl: cpl(r.spend, r.conversions),
+          ctr: ctr(r.clicks, r.impressions),
+        };
+      }),
+    [quarters, rollup],
+  );
+
+  const spendSlices = now.channels
+    .filter((c) => c.spend > 0)
+    .map((c) => ({ name: c.name, value: c.spend, color: c.color }));
+  const leadSlices = now.channels
+    .filter((c) => c.conversions > 0)
+    .map((c) => ({ name: c.name, value: c.conversions, color: c.color }));
+
+  const paid = now.channels.filter((c) => c.cpl > 0);
+  const cheapest = [...paid].sort((a, b) => a.cpl - b.cpl)[0];
+  const dearest = [...paid].sort((a, b) => b.cpl - a.cpl)[0];
+  const engaged = now.channels.filter((c) => c.impressions > 0);
+  const bestCtr = [...engaged].sort((a, b) => b.ctr - a.ctr)[0];
+  const worstCtr = [...engaged].sort((a, b) => a.ctr - b.ctr)[0];
+
+  const funnel = [
+    { label: "Impressions", value: now.impressions },
+    { label: "Clicks", value: now.clicks },
+    { label: "Leads", value: now.conversions },
   ];
-
-  const ranked = channels
-    .map((c) => ({
-      ...c,
-      cpl: c.spend > 0 && c.conversions > 0 ? c.spend / c.conversions : 0,
-      ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
-    }));
-
-  const withCpl = ranked.filter((c) => c.cpl > 0);
-  const cheapestCpl = withCpl.slice().sort((a, b) => a.cpl - b.cpl)[0];
-  const worstCpl = withCpl.slice().sort((a, b) => b.cpl - a.cpl)[0];
-  const bestCtr = ranked.slice().sort((a, b) => b.ctr - a.ctr)[0];
-  const worstCtr = ranked.filter((c) => c.impressions > 0).slice().sort((a, b) => a.ctr - b.ctr)[0];
 
   const exportSheets = [
     {
-      name: "Overview",
+      name: "Cross-channel",
       rows: [
-        ["Channel", "Spend (USD)", "Leads/Conv", "Impressions", "Clicks", "CPL", "CTR %"],
-        ...ranked.map((c) => [c.name, c.spend, c.conversions, c.impressions, c.clicks, c.cpl, c.ctr] as (string | number)[]),
-        ["Blended Total", totalSpend, totalLeads, totalImp, m.clicks + g.clicks, blendedCpl, ctr(m.clicks + g.clicks, totalImp)],
+        ["Channel", "Spend (USD)", "Leads / conversions", "Impressions", "Clicks", "CPL", "CTR %"],
+        ...now.channels.map(
+          (c) =>
+            [c.name, c.spend, c.conversions, c.impressions, c.clicks, c.cpl, c.ctr] as (
+              string | number
+            )[],
+        ),
+        [
+          "Blended",
+          now.spend,
+          now.conversions,
+          now.impressions,
+          now.clicks,
+          blendedCpl,
+          ctr(now.clicks, now.impressions),
+        ],
+      ],
+    },
+    {
+      name: "By quarter",
+      rows: [
+        ["Quarter", "Spend", "Leads", "Impressions", "Clicks", "CPL", "CTR %"],
+        ...byQuarter.map(
+          (q) =>
+            [q.label, q.spend, q.leads, q.impressions, q.clicks, q.cpl, q.ctr] as (
+              string | number
+            )[],
+        ),
       ],
     },
   ];
 
-  const aiFn = useServerFn(analyzeInsights);
-  const [aiText, setAiText] = useState<string | null>(null);
-  const [aiErr, setAiErr] = useState<string | null>(null);
-  const summary = useMemo(
-    () =>
-      JSON.stringify({
-        period: period ? period : "all-time",
-        blended: { totalSpend, totalLeads, blendedCpl, totalImpressions: totalImp },
-        channels: ranked,
-      }, null, 2),
-    [period, totalSpend, totalLeads, blendedCpl, totalImp, ranked],
-  );
-  const gen = useMutation({
-    mutationFn: () => aiFn({ data: { summary } }),
-    onSuccess: (r) => { setAiText(r.text); setAiErr(null); },
-    onError: (e) => setAiErr(e instanceof Error ? e.message : "AI failed"),
-  });
+  const aiPayload = {
+    period: quarter?.label ?? "all time",
+    comparedWith: previousQuarter?.label ?? null,
+    blended: {
+      spend: now.spend,
+      leads: now.conversions,
+      impressions: now.impressions,
+      clicks: now.clicks,
+      cpl: blendedCpl,
+      ctrPct: ctr(now.clicks, now.impressions),
+      cpc: cpc(now.spend, now.clicks),
+    },
+    previousBlended: prev
+      ? { spend: prev.spend, leads: prev.conversions, cpl: cpl(prev.spend, prev.conversions) }
+      : null,
+    channels: now.channels.map(({ color: _color, ...c }) => c),
+    quarterlyTrend: byQuarter,
+    organicSnapshot: {
+      facebookPeriods: data.facebook.length,
+      instagramPeriods: data.instagram.length,
+    },
+    seo: data.ga.metrics
+      .filter((m) => m.value !== null)
+      .map((m) => ({ metric: m.metric, value: m.raw, change: m.changeRaw })),
+  };
 
   return (
-    <AppShell title="Overview" actions={<ExportButton filename="radiocom-overview" sheets={exportSheets} />}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Spend" value={fmtMoney(totalSpend)} sub={period?.label ?? "All time"} icon={DollarSign} tone="primary" />
-        <KpiCard label="Total Leads / Conversions" value={fmtInt(totalLeads)} sub="Meta + Google + OLX calls" icon={Target} />
-        <KpiCard label="Blended CPL" value={blendedCpl > 0 ? fmtMoney(blendedCpl) : "—"} sub="Spend / Leads" icon={TrendingDown} />
-        <KpiCard label="Total Impressions" value={fmtInt(totalImp)} sub="Across all channels" icon={Users} />
+    <AppShell
+      title="Cross-channel"
+      subtitle="Meta · Google · OLX"
+      actions={<ExportButton filename="radiocom-cross-channel" sheets={exportSheets} />}
+    >
+      <SectionRule
+        label="Blended performance"
+        note={quarter ? quarter.label : "All quarters combined"}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatTile
+          accent
+          label="Total spend"
+          value={fmtMoney(now.spend)}
+          icon={DollarSign}
+          delta={prev ? delta(now.spend, prev.spend) : null}
+          deltaSuffix={deltaSuffix}
+          trend={byQuarter.map((q) => q.spend)}
+          trendColor={SERIES[0]}
+        />
+        <StatTile
+          label="Leads & conversions"
+          value={fmtInt(now.conversions)}
+          sub={now.includeOlx ? "incl. OLX phone clicks" : "Meta leads + Google conv."}
+          icon={Target}
+          delta={prev ? delta(now.conversions, prev.conversions) : null}
+          deltaSuffix={deltaSuffix}
+          trend={byQuarter.map((q) => q.leads)}
+          trendColor={SERIES[1]}
+        />
+        <StatTile
+          label="Blended CPL"
+          value={blendedCpl > 0 ? fmtMoney(blendedCpl) : "—"}
+          sub="Spend ÷ conversions"
+          icon={TrendingDown}
+          lowerIsBetter
+          delta={prev ? delta(blendedCpl, cpl(prev.spend, prev.conversions)) : null}
+          deltaSuffix={deltaSuffix}
+          trend={byQuarter.map((q) => q.cpl)}
+          trendColor={SERIES[2]}
+        />
+        <StatTile
+          label="Impressions"
+          value={fmtCompact(now.impressions)}
+          sub={fmtInt(now.impressions)}
+          icon={Eye}
+          delta={prev ? delta(now.impressions, prev.impressions) : null}
+          deltaSuffix={deltaSuffix}
+          trend={byQuarter.map((q) => q.impressions)}
+          trendColor={SERIES[3]}
+        />
+        <StatTile
+          label="Clicks"
+          value={fmtInt(now.clicks)}
+          sub={`CTR ${fmtPct(ctr(now.clicks, now.impressions), 3)}`}
+          icon={MousePointerClick}
+          delta={prev ? delta(now.clicks, prev.clicks) : null}
+          deltaSuffix={deltaSuffix}
+          trend={byQuarter.map((q) => q.clicks)}
+          trendColor={SERIES[4]}
+        />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border bg-card p-5 lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Spend vs Conversions by channel</h2>
-            <div className="text-xs text-muted-foreground">USD / count</div>
-          </div>
+      <SectionRule label="Where the money goes" />
+
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+        <ChartFrame
+          className="xl:col-span-2"
+          title="Paid spend by channel and quarter"
+          hint="Stacked, US dollars"
+          legend={[
+            { label: "Meta Ads", color: CHANNEL_COLOR["Meta Ads"] },
+            { label: "Google Ads", color: CHANNEL_COLOR["Google Ads"] },
+          ]}
+          table={{
+            columns: [
+              { key: "label", header: "Quarter" },
+              { key: "meta", header: "Meta Ads", numeric: true },
+              { key: "google", header: "Google Ads", numeric: true },
+              { key: "total", header: "Total", numeric: true },
+            ],
+            rows: byQuarter.map((q) => ({
+              label: q.label,
+              meta: fmtMoney(q["Meta Ads"]),
+              google: fmtMoney(q["Google Ads"]),
+              total: fmtMoney(q["Meta Ads"] + q["Google Ads"]),
+            })),
+          }}
+          empty={byQuarter.length ? undefined : "No paid spend found in the workbook."}
+        >
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={ranked} margin={{ top: 10, right: 10, bottom: 5, left: 0 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
-                <Bar dataKey="spend" fill="var(--chart-1)" name="Spend" radius={[4,4,0,0]} />
-                <Bar dataKey="conversions" fill="var(--chart-2)" name="Conversions" radius={[4,4,0,0]}>
-                  {ranked.map((_, i) => <Cell key={i} fill="var(--chart-2)" />)}
-                </Bar>
+              <BarChart data={byQuarter} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <Grid />
+                <XAxis dataKey="label" {...xAxisProps} />
+                <YAxis {...yAxisProps} tickFormatter={(v: number) => `$${fmtCompact(v)}`} />
+                <ChartTooltip format={(v) => fmtMoney(v)} />
+                <Bar
+                  dataKey="Meta Ads"
+                  stackId="spend"
+                  fill={CHANNEL_COLOR["Meta Ads"]}
+                  stroke={surfaceStroke}
+                  strokeWidth={2}
+                  maxBarSize={54}
+                />
+                <Bar
+                  dataKey="Google Ads"
+                  stackId="spend"
+                  fill={CHANNEL_COLOR["Google Ads"]}
+                  stroke={surfaceStroke}
+                  strokeWidth={2}
+                  radius={[3, 3, 0, 0]}
+                  maxBarSize={54}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </ChartFrame>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border bg-card p-5">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-500">
-              <TrendingUp className="h-4 w-4" /> Top performers
-            </div>
-            <ul className="space-y-2 text-sm">
-              {cheapestCpl && <li className="flex justify-between"><span className="text-muted-foreground">Cheapest CPL</span><span className="font-mono">{cheapestCpl.name} · {fmtMoney(cheapestCpl.cpl)}</span></li>}
-              {bestCtr && <li className="flex justify-between"><span className="text-muted-foreground">Highest CTR</span><span className="font-mono">{bestCtr.name} · {fmtPct(bestCtr.ctr)}</span></li>}
-            </ul>
-          </div>
-          <div className="rounded-xl border bg-card p-5">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
-              <TrendingDown className="h-4 w-4" /> Underperformers
-            </div>
-            <ul className="space-y-2 text-sm">
-              {worstCpl && <li className="flex justify-between"><span className="text-muted-foreground">Highest CPL</span><span className="font-mono">{worstCpl.name} · {fmtMoney(worstCpl.cpl)}</span></li>}
-              {worstCtr && <li className="flex justify-between"><span className="text-muted-foreground">Lowest CTR</span><span className="font-mono">{worstCtr.name} · {fmtPct(worstCtr.ctr)}</span></li>}
-            </ul>
-          </div>
-        </div>
+        <ChartFrame
+          title="Spend share"
+          hint={quarter ? quarter.label : "All time"}
+          legend={spendSlices.map((s) => ({ label: s.name, color: s.color }))}
+          table={{
+            columns: [
+              { key: "channel", header: "Channel" },
+              { key: "spend", header: "Spend", numeric: true },
+              { key: "share", header: "Share", numeric: true },
+            ],
+            rows: spendSlices.map((s) => ({
+              channel: s.name,
+              spend: fmtMoney(s.value),
+              share: fmtPct(now.spend > 0 ? (s.value / now.spend) * 100 : 0, 1),
+            })),
+          }}
+          empty={spendSlices.length ? undefined : "No spend recorded for this period."}
+        >
+          <Donut
+            data={spendSlices}
+            format={(v) => fmtMoney(v)}
+            centerValue={fmtMoney(now.spend)}
+            centerLabel="Total spend"
+          />
+        </ChartFrame>
       </div>
 
-      <div className="mt-6 rounded-xl border bg-card p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" /> AI Strategic Helper
+      <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
+        <ChartFrame
+          title="Conversion share"
+          hint="Leads, conversions and phone clicks"
+          legend={leadSlices.map((s) => ({ label: s.name, color: s.color }))}
+          table={{
+            columns: [
+              { key: "channel", header: "Channel" },
+              { key: "conv", header: "Conversions", numeric: true },
+              { key: "share", header: "Share", numeric: true },
+            ],
+            rows: leadSlices.map((s) => ({
+              channel: s.name,
+              conv: fmtInt(s.value),
+              share: fmtPct(now.conversions > 0 ? (s.value / now.conversions) * 100 : 0, 1),
+            })),
+          }}
+          empty={leadSlices.length ? undefined : "No conversions recorded for this period."}
+        >
+          <Donut
+            data={leadSlices}
+            format={(v) => fmtInt(v)}
+            centerValue={fmtInt(now.conversions)}
+            centerLabel="Conversions"
+          />
+        </ChartFrame>
+
+        <ChartFrame
+          title="Blended cost per lead"
+          hint="US dollars, by quarter"
+          table={{
+            columns: [
+              { key: "label", header: "Quarter" },
+              { key: "cpl", header: "Blended CPL", numeric: true },
+              { key: "spend", header: "Spend", numeric: true },
+              { key: "leads", header: "Conversions", numeric: true },
+            ],
+            rows: byQuarter.map((q) => ({
+              label: q.label,
+              cpl: q.cpl > 0 ? fmtMoney(q.cpl) : "—",
+              spend: fmtMoney(q.spend),
+              leads: fmtInt(q.leads),
+            })),
+          }}
+          empty={byQuarter.length ? undefined : "No quarters detected."}
+        >
+          <div className="h-60">
+            <ResponsiveContainer>
+              <LineChart data={byQuarter} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+                <Grid />
+                <XAxis dataKey="label" {...xAxisProps} />
+                <YAxis {...yAxisProps} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
+                <ChartTooltip format={(v) => fmtMoney(v)} cursor={lineCursor} />
+                <Line
+                  type="monotone"
+                  dataKey="cpl"
+                  name="Blended CPL"
+                  stroke={SERIES[0]}
+                  strokeWidth={2}
+                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <Button size="sm" variant="outline" onClick={() => gen.mutate()} disabled={gen.isPending}>
-            {gen.isPending ? "Analyzing…" : aiText ? "Regenerate" : "Analyze current view"}
-          </Button>
-        </div>
-        {aiErr && <div className="mb-3 rounded-md bg-primary/10 p-3 text-sm text-primary">{aiErr}</div>}
-        {aiText ? (
-          <div className="prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown>{aiText}</ReactMarkdown>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Click "Analyze current view" to get an executive summary and recommendations based on the filtered KPIs above.
-          </p>
-        )}
-        <div className="mt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-          Blended CTR: {fmtPct(ctr(m.clicks + g.clicks, totalImp))} · Blended CPC: {fmtDecimal(cpc(totalSpend, m.clicks + g.clicks), 3)}
-        </div>
+        </ChartFrame>
+
+        <ChartFrame
+          title="Funnel"
+          hint={quarter ? quarter.label : "All time"}
+          note="Stages are ordered, so they use the sequential ramp rather than category colours."
+          table={{
+            columns: [
+              { key: "stage", header: "Stage" },
+              { key: "value", header: "Count", numeric: true },
+              { key: "rate", header: "From previous", numeric: true },
+            ],
+            rows: funnel.map((f, i) => ({
+              stage: f.label,
+              value: fmtInt(f.value),
+              rate:
+                i === 0 || funnel[i - 1].value === 0
+                  ? "—"
+                  : fmtPct((f.value / funnel[i - 1].value) * 100, 3),
+            })),
+          }}
+          empty={now.impressions ? undefined : "No impressions recorded for this period."}
+        >
+          <StageBars data={funnel} format={(v) => fmtCompact(v)} height={240} />
+        </ChartFrame>
       </div>
+
+      <SectionRule label="Channel league table" />
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <ChartFrame
+          title="Cost per lead by channel"
+          hint="Lower is better · paid channels only"
+          table={{
+            columns: [
+              { key: "channel", header: "Channel" },
+              { key: "cpl", header: "CPL", numeric: true },
+            ],
+            rows: paid.map((c) => ({ channel: c.name, cpl: fmtMoney(c.cpl) })),
+          }}
+          empty={paid.length ? undefined : "No channel reported both spend and conversions."}
+        >
+          <HBarRanking
+            data={[...paid]
+              .sort((a, b) => b.cpl - a.cpl)
+              .map((c) => ({ label: c.name, value: c.cpl }))}
+            color={SERIES[0]}
+            seriesName="CPL"
+            format={(v) => fmtMoney(v)}
+            labelWidth={92}
+          />
+        </ChartFrame>
+
+        <ChartFrame
+          title="Click-through rate by channel"
+          hint="Clicks ÷ impressions"
+          table={{
+            columns: [
+              { key: "channel", header: "Channel" },
+              { key: "ctr", header: "CTR", numeric: true },
+              { key: "clicks", header: "Clicks", numeric: true },
+            ],
+            rows: engaged.map((c) => ({
+              channel: c.name,
+              ctr: fmtPct(c.ctr, 3),
+              clicks: fmtInt(c.clicks),
+            })),
+          }}
+          empty={engaged.length ? undefined : "No impressions recorded for this period."}
+        >
+          <HBarRanking
+            data={[...engaged]
+              .sort((a, b) => b.ctr - a.ctr)
+              .map((c) => ({ label: c.name, value: c.ctr }))}
+            color={SERIES[1]}
+            seriesName="CTR"
+            format={(v) => `${v.toFixed(2)}%`}
+            labelWidth={92}
+          />
+        </ChartFrame>
+
+        <Panel>
+          <PanelHeader title="Read-outs" hint="Best and worst on the two efficiency measures." />
+          <ul className="mt-3">
+            {cheapest && (
+              <StatRow
+                label="Cheapest CPL"
+                value={`${cheapest.name} · ${fmtMoney(cheapest.cpl)}`}
+                swatch={cheapest.color}
+              />
+            )}
+            {dearest && dearest !== cheapest && (
+              <StatRow
+                label="Dearest CPL"
+                value={`${dearest.name} · ${fmtMoney(dearest.cpl)}`}
+                swatch={dearest.color}
+              />
+            )}
+            {bestCtr && (
+              <StatRow
+                label="Highest CTR"
+                value={`${bestCtr.name} · ${fmtPct(bestCtr.ctr, 3)}`}
+                swatch={bestCtr.color}
+              />
+            )}
+            {worstCtr && worstCtr !== bestCtr && (
+              <StatRow
+                label="Lowest CTR"
+                value={`${worstCtr.name} · ${fmtPct(worstCtr.ctr, 3)}`}
+                swatch={worstCtr.color}
+              />
+            )}
+            <StatRow label="Blended CPC" value={fmtDecimal(cpc(now.spend, now.clicks), 4)} />
+            <StatRow
+              label="Channels reporting"
+              value={`${now.channels.filter((c) => c.impressions > 0 || c.spend > 0).length} of ${CHANNELS.length}`}
+            />
+          </ul>
+        </Panel>
+      </div>
+
+      <SectionRule label="Advisory" />
+      <AiPanel payload={aiPayload} context="the blended cross-channel view" />
     </AppShell>
   );
 }

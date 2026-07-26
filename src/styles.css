@@ -5,27 +5,35 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Radiocom Insight — design system.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Visual direction: a Swiss instrument panel. Hairline rules carry structure
+ * instead of nested rounded cards; Archivo sets display type; IBM Plex Mono
+ * carries every figure so columns align; one brand red is the only accent.
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * The chart palette (--chart-1..6) is a validated categorical set — both the
+ * light and dark steps clear the lightness band, chroma floor, adjacent CVD
+ * separation (ΔE ≥ 8 OKLab×100) and normal-vision floor. Three light-mode
+ * slots sit under 3:1 against white, so every chart ships a legend, selective
+ * direct labels and a table view. Do not re-step these values in isolation —
+ * re-validate the set as a whole.
  *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * All colors are oklch. Source hexes are noted for reference.
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-xl: calc(var(--radius) + 3px);
+  --radius-2xl: calc(var(--radius) + 6px);
+  --radius-3xl: calc(var(--radius) + 10px);
+  --radius-4xl: calc(var(--radius) + 14px);
+
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,14 +51,21 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-rule: var(--rule);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-caution: var(--caution);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -62,76 +77,121 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Radiocom light theme */
-  --background: oklch(0.985 0.002 250);
-  --foreground: oklch(0.18 0.02 260);
+  --radius: 0.25rem;
+
+  /* Paper-white canvas, near-black ink. */
+  --background: oklch(0.9835 0.0015 260);
+  --surface: oklch(1 0 0);
+  --surface-sunken: oklch(0.9655 0.0025 260);
+  --foreground: oklch(0.1750 0.0120 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 260);
+  --card-foreground: oklch(0.1750 0.0120 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
-  --primary: oklch(0.58 0.22 27);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.006 260);
-  --secondary-foreground: oklch(0.22 0.02 260);
-  --muted: oklch(0.955 0.006 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.94 0.02 27);
-  --accent-foreground: oklch(0.35 0.15 27);
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.01 260);
-  --input: oklch(0.9 0.01 260);
-  --ring: oklch(0.58 0.22 27);
-  --chart-1: oklch(0.58 0.22 27);
-  --chart-2: oklch(0.5 0.15 240);
-  --chart-3: oklch(0.7 0.15 160);
-  --chart-4: oklch(0.75 0.18 80);
-  --chart-5: oklch(0.6 0.2 300);
-  --sidebar: oklch(0.99 0.002 250);
-  --sidebar-foreground: oklch(0.22 0.02 260);
-  --sidebar-primary: oklch(0.58 0.22 27);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.955 0.006 260);
-  --sidebar-accent-foreground: oklch(0.22 0.02 260);
-  --sidebar-border: oklch(0.9 0.01 260);
-  --sidebar-ring: oklch(0.58 0.22 27);
+  --popover-foreground: oklch(0.1750 0.0120 260);
+
+  /* Brand red #E30613, sampled from the Radiocom mark. */
+  --primary: oklch(0.5770 0.2339 27.95);
+  --primary-foreground: oklch(0.9900 0 0);
+
+  --secondary: oklch(0.9550 0.0035 260);
+  --secondary-foreground: oklch(0.2200 0.0120 260);
+  --muted: oklch(0.9600 0.0030 260);
+  --muted-foreground: oklch(0.4900 0.0130 260);
+  --accent: oklch(0.9560 0.0180 28);
+  --accent-foreground: oklch(0.3800 0.1600 28);
+  --destructive: oklch(0.5770 0.2339 27.95);
+  --destructive-foreground: oklch(0.9900 0 0);
+
+  --border: oklch(0.9080 0.0050 260);
+  --rule: oklch(0.8720 0.0060 260);
+  --input: oklch(0.8900 0.0060 260);
+  --ring: oklch(0.5770 0.2339 27.95);
+
+  /* Categorical series — light steps. */
+  --chart-1: oklch(0.5645 0.2172 29.80); /* #d81f11 red    */
+  --chart-2: oklch(0.5753 0.1626 255.53); /* #2a78d6 blue   */
+  --chart-3: oklch(0.6690 0.1408 162.11); /* #1baf7a aqua   */
+  --chart-4: oklch(0.7644 0.1612 75.12); /* #eda100 yellow */
+  --chart-5: oklch(0.4331 0.1671 283.62); /* #4a3aa7 violet */
+  --chart-6: oklch(0.7163 0.1412 357.39); /* #e87ba4 magenta*/
+
+  /* Sequential blue ramp, light→dark, for ordinal marks. */
+  --seq-1: oklch(0.9050 0.0411 252.82);
+  --seq-2: oklch(0.8120 0.0788 253.40);
+  --seq-3: oklch(0.7170 0.1183 253.58);
+  --seq-4: oklch(0.6221 0.1612 255.05);
+  --seq-5: oklch(0.5275 0.1497 255.86);
+  --seq-6: oklch(0.4327 0.1282 256.54);
+
+  /* Status — reserved, never reused as a series colour. */
+  --positive: oklch(0.5450 0.1350 162.11);
+  --caution: oklch(0.5900 0.1350 65);
+  --negative: oklch(0.5645 0.2172 29.80);
+
+  --sidebar: oklch(0.9925 0.0010 260);
+  --sidebar-foreground: oklch(0.2200 0.0120 260);
+  --sidebar-primary: oklch(0.5770 0.2339 27.95);
+  --sidebar-primary-foreground: oklch(0.9900 0 0);
+  --sidebar-accent: oklch(0.9500 0.0035 260);
+  --sidebar-accent-foreground: oklch(0.1750 0.0120 260);
+  --sidebar-border: oklch(0.9080 0.0050 260);
+  --sidebar-ring: oklch(0.5770 0.2339 27.95);
 }
 
 .dark {
-  /* Radiocom dark theme */
-  --background: oklch(0.16 0.015 260);
-  --foreground: oklch(0.97 0.005 260);
-  --card: oklch(0.21 0.018 260);
-  --card-foreground: oklch(0.97 0.005 260);
-  --popover: oklch(0.21 0.018 260);
-  --popover-foreground: oklch(0.97 0.005 260);
-  --primary: oklch(0.65 0.24 27);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.27 0.02 260);
-  --secondary-foreground: oklch(0.97 0.005 260);
-  --muted: oklch(0.27 0.02 260);
-  --muted-foreground: oklch(0.72 0.02 260);
-  --accent: oklch(0.35 0.12 27);
-  --accent-foreground: oklch(0.99 0 0);
-  --destructive: oklch(0.65 0.24 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.24 27);
-  --chart-1: oklch(0.65 0.24 27);
-  --chart-2: oklch(0.65 0.18 240);
-  --chart-3: oklch(0.72 0.17 160);
-  --chart-4: oklch(0.78 0.18 80);
-  --chart-5: oklch(0.65 0.22 300);
-  --sidebar: oklch(0.19 0.017 260);
-  --sidebar-foreground: oklch(0.97 0.005 260);
-  --sidebar-primary: oklch(0.65 0.24 27);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.27 0.02 260);
-  --sidebar-accent-foreground: oklch(0.97 0.005 260);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.24 27);
+  --background: oklch(0.1720 0.0080 260);
+  --surface: oklch(0.2080 0.0095 260);
+  --surface-sunken: oklch(0.1480 0.0070 260);
+  --foreground: oklch(0.9650 0.0035 260);
+  --card: oklch(0.2080 0.0095 260);
+  --card-foreground: oklch(0.9650 0.0035 260);
+  --popover: oklch(0.2350 0.0100 260);
+  --popover-foreground: oklch(0.9650 0.0035 260);
+
+  --primary: oklch(0.6499 0.1990 29.54);
+  --primary-foreground: oklch(0.9900 0 0);
+
+  --secondary: oklch(0.2650 0.0100 260);
+  --secondary-foreground: oklch(0.9650 0.0035 260);
+  --muted: oklch(0.2650 0.0100 260);
+  --muted-foreground: oklch(0.7150 0.0110 260);
+  --accent: oklch(0.3200 0.0700 28);
+  --accent-foreground: oklch(0.9650 0.0035 260);
+  --destructive: oklch(0.6499 0.1990 29.54);
+  --destructive-foreground: oklch(0.9900 0 0);
+
+  --border: oklch(1 0 0 / 12%);
+  --rule: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.6499 0.1990 29.54);
+
+  /* Categorical series — dark steps, chosen for the dark band, not flipped. */
+  --chart-1: oklch(0.6499 0.1990 29.54); /* #f0503f red    */
+  --chart-2: oklch(0.6221 0.1612 255.05); /* #3987e5 blue   */
+  --chart-3: oklch(0.6212 0.1283 163.11); /* #199e70 aqua   */
+  --chart-4: oklch(0.6699 0.1425 73.23); /* #c98500 yellow */
+  --chart-5: oklch(0.6696 0.1452 286.83); /* #9085e9 violet */
+  --chart-6: oklch(0.6224 0.1712 0.84); /* #d55181 magenta*/
+
+  --seq-1: oklch(0.4327 0.1282 256.54);
+  --seq-2: oklch(0.5275 0.1497 255.86);
+  --seq-3: oklch(0.6221 0.1612 255.05);
+  --seq-4: oklch(0.7170 0.1183 253.58);
+  --seq-5: oklch(0.8120 0.0788 253.40);
+  --seq-6: oklch(0.9050 0.0411 252.82);
+
+  --positive: oklch(0.7000 0.1400 163.11);
+  --caution: oklch(0.7600 0.1350 73.23);
+  --negative: oklch(0.6900 0.1900 29.54);
+
+  --sidebar: oklch(0.1900 0.0085 260);
+  --sidebar-foreground: oklch(0.9650 0.0035 260);
+  --sidebar-primary: oklch(0.6499 0.1990 29.54);
+  --sidebar-primary-foreground: oklch(0.9900 0 0);
+  --sidebar-accent: oklch(0.2650 0.0100 260);
+  --sidebar-accent-foreground: oklch(0.9650 0.0035 260);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.6499 0.1990 29.54);
 }
 
 @layer base {
@@ -139,8 +199,67 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv05" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  /* Recharts injects its own focus ring; the panel already shows focus. */
+  .recharts-wrapper:focus,
+  .recharts-surface:focus {
+    outline: none;
+  }
+}
+
+@layer components {
+  /* Small-caps section label used above every panel and stat. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  /* Figures that align vertically: table cells, axis ticks, table twins. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Hero and stat-tile values: proportional figures, never tabular. */
+  .figure {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: proportional-nums;
+  }
+
+  /* Faint diagonal hatch marking the "no data in this period" state. */
+  .hatched {
+    background-image: repeating-linear-gradient(
+      135deg,
+      var(--color-border) 0,
+      var(--color-border) 1px,
+      transparent 1px,
+      transparent 7px
+    );
   }
 }

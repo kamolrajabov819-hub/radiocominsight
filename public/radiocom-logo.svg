@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 128" width="120" height="128" fill="none">
+  <title>Radiocom</title>
+  <path d="M 8.03 64.25 A 50 50 0 0 0 83.00 109.30 L 68.50 84.19 A 21 21 0 0 1 37.01 65.27 Z" fill="#1a1a1a"/>
+  <path d="M 8.19 61.64 A 50 50 0 0 1 107.24 57.32" stroke="#b0b0b0" stroke-width="11"/>
+  <path d="M 26.12 63.21 A 32 32 0 0 1 89.51 60.44" stroke="#b0b0b0" stroke-width="11"/>
+  <circle cx="58" cy="66" r="16" fill="#e30613"/>
+</svg>

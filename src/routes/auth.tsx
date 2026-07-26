@@ -135,7 +135,11 @@ function AuthPage() {
           </button>
         </form>
 
-        {error && <p className="mt-3 text-sm text-destructive" role="alert">{error}</p>}
+        {error && (
+          <p className="mt-3 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
 
         <button
           type="button"

@@ -8,7 +8,13 @@ export default defineTool({
   description:
     "Return product-level performance from the OLX listings: name, price, views, favorites (likes), phone clicks and CTR. Optionally limit the number of rows and sort by a metric.",
   inputSchema: {
-    limit: z.number().int().min(1).max(200).optional().describe("Maximum number of rows to return. Defaults to 25."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(200)
+      .optional()
+      .describe("Maximum number of rows to return. Defaults to 25."),
     sort_by: z
       .enum(["views", "favorites", "phone_clicks", "price"])
       .optional()

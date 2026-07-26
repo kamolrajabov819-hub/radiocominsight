@@ -1,29 +1,63 @@
+import type { ReactNode } from "react";
 import { useData } from "@/lib/data-context";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
+/**
+ * The single filter row for the whole product — every page re-renders
+ * against the same slice. Never duplicate this inside a chart card.
+ */
 export function GlobalFilter() {
-  const { periods, period, setPeriod } = useData();
-  const value = period ? `${period.start}|${period.stop}` : "all";
+  const { quarters, quarter, setQuarter } = useData();
+  if (!quarters.length) return null;
+
   return (
-    <Select
-      value={value}
-      onValueChange={(v) => {
-        if (v === "all") return setPeriod(null);
-        const p = periods.find((x) => `${x.start}|${x.stop}` === v);
-        setPeriod(p ?? null);
-      }}
+    <div
+      className="flex items-center overflow-x-auto border border-border"
+      role="group"
+      aria-label="Reporting period"
     >
-      <SelectTrigger className="w-[220px]">
-        <SelectValue placeholder="Select period" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All time (blended)</SelectItem>
-        {periods.map((p) => (
-          <SelectItem key={`${p.start}|${p.stop}`} value={`${p.start}|${p.stop}`}>
-            {p.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <Option active={!quarter} onClick={() => setQuarter(null)}>
+        All time
+      </Option>
+      {quarters.map((q) => (
+        <Option
+          key={q.key}
+          active={quarter?.key === q.key}
+          onClick={() => setQuarter(q)}
+          title={`${q.start} → ${q.stop}`}
+        >
+          {q.short}
+        </Option>
+      ))}
+    </div>
+  );
+}
+
+function Option({
+  active,
+  onClick,
+  children,
+  title,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={title}
+      className={cn(
+        "shrink-0 border-r border-border px-2.5 py-1.5 text-xs font-medium transition-colors last:border-r-0",
+        active
+          ? "bg-foreground text-background"
+          : "text-muted-foreground hover:bg-surface-sunken hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
   );
 }
