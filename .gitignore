@@ -16,6 +16,10 @@ dist-ssr
 .nitro
 *.local
 
+# Netlify
+# Nitro's netlify preset writes the SSR handler here during the build.
+.netlify/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
