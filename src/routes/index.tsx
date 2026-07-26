@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
       { title: "Overview — Radiocom Analytics Hub" },
       { name: "description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
       { property: "og:title", content: "Overview — Radiocom Analytics Hub" },
-      { property: "og:description", content: "Blended cross-channel marketing view for Radiocom." },
+      { property: "og:description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
     ],
   }),
   component: Overview,
