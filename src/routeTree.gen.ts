@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OlxRouteImport } from './routes/olx'
+import { Route as MetaAdsRouteImport } from './routes/meta-ads'
+import { Route as InstagramRouteImport } from './routes/instagram'
+import { Route as GoogleAnalyticsRouteImport } from './routes/google-analytics'
+import { Route as GoogleAdsRouteImport } from './routes/google-ads'
+import { Route as FacebookRouteImport } from './routes/facebook'
 import { Route as IndexRouteImport } from './routes/index'
 
+const OlxRoute = OlxRouteImport.update({
+  id: '/olx',
+  path: '/olx',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetaAdsRoute = MetaAdsRouteImport.update({
+  id: '/meta-ads',
+  path: '/meta-ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstagramRoute = InstagramRouteImport.update({
+  id: '/instagram',
+  path: '/instagram',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoogleAnalyticsRoute = GoogleAnalyticsRouteImport.update({
+  id: '/google-analytics',
+  path: '/google-analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoogleAdsRoute = GoogleAdsRouteImport.update({
+  id: '/google-ads',
+  path: '/google-ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacebookRoute = FacebookRouteImport.update({
+  id: '/facebook',
+  path: '/facebook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/facebook': typeof FacebookRoute
+  '/google-ads': typeof GoogleAdsRoute
+  '/google-analytics': typeof GoogleAnalyticsRoute
+  '/instagram': typeof InstagramRoute
+  '/meta-ads': typeof MetaAdsRoute
+  '/olx': typeof OlxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/facebook': typeof FacebookRoute
+  '/google-ads': typeof GoogleAdsRoute
+  '/google-analytics': typeof GoogleAnalyticsRoute
+  '/instagram': typeof InstagramRoute
+  '/meta-ads': typeof MetaAdsRoute
+  '/olx': typeof OlxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/facebook': typeof FacebookRoute
+  '/google-ads': typeof GoogleAdsRoute
+  '/google-analytics': typeof GoogleAnalyticsRoute
+  '/instagram': typeof InstagramRoute
+  '/meta-ads': typeof MetaAdsRoute
+  '/olx': typeof OlxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/facebook'
+    | '/google-ads'
+    | '/google-analytics'
+    | '/instagram'
+    | '/meta-ads'
+    | '/olx'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/facebook'
+    | '/google-ads'
+    | '/google-analytics'
+    | '/instagram'
+    | '/meta-ads'
+    | '/olx'
+  id:
+    | '__root__'
+    | '/'
+    | '/facebook'
+    | '/google-ads'
+    | '/google-analytics'
+    | '/instagram'
+    | '/meta-ads'
+    | '/olx'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FacebookRoute: typeof FacebookRoute
+  GoogleAdsRoute: typeof GoogleAdsRoute
+  GoogleAnalyticsRoute: typeof GoogleAnalyticsRoute
+  InstagramRoute: typeof InstagramRoute
+  MetaAdsRoute: typeof MetaAdsRoute
+  OlxRoute: typeof OlxRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/olx': {
+      id: '/olx'
+      path: '/olx'
+      fullPath: '/olx'
+      preLoaderRoute: typeof OlxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meta-ads': {
+      id: '/meta-ads'
+      path: '/meta-ads'
+      fullPath: '/meta-ads'
+      preLoaderRoute: typeof MetaAdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instagram': {
+      id: '/instagram'
+      path: '/instagram'
+      fullPath: '/instagram'
+      preLoaderRoute: typeof InstagramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-analytics': {
+      id: '/google-analytics'
+      path: '/google-analytics'
+      fullPath: '/google-analytics'
+      preLoaderRoute: typeof GoogleAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-ads': {
+      id: '/google-ads'
+      path: '/google-ads'
+      fullPath: '/google-ads'
+      preLoaderRoute: typeof GoogleAdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/facebook': {
+      id: '/facebook'
+      path: '/facebook'
+      fullPath: '/facebook'
+      preLoaderRoute: typeof FacebookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FacebookRoute: FacebookRoute,
+  GoogleAdsRoute: GoogleAdsRoute,
+  GoogleAnalyticsRoute: GoogleAnalyticsRoute,
+  InstagramRoute: InstagramRoute,
+  MetaAdsRoute: MetaAdsRoute,
+  OlxRoute: OlxRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
