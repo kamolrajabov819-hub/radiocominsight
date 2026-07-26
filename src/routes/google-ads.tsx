@@ -12,7 +12,7 @@ import { AiPanel } from "@/components/ai-panel";
 import {
   CHANNEL_COLOR,
   ChartTooltip,
-  Donut,
+  PartToWhole,
   Grid,
   SERIES,
   lineCursor,
@@ -449,9 +449,9 @@ function GoogleAdsPage() {
           }}
           empty={costSlices.length ? undefined : "No cost recorded for this period."}
         >
-          <Donut
+          <PartToWhole
             data={costSlices}
-            format={(v) => fmtMoney(v)}
+            format={(v: number) => fmtMoney(v)}
             centerValue={fmtMoney(s.cost)}
             centerLabel="Total cost"
           />
@@ -543,20 +543,20 @@ function GoogleAdsPage() {
                 <YAxis {...yAxisProps} tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
                 <ChartTooltip format={(v) => fmtPct(v, 2)} cursor={lineCursor} />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="ctr"
                   name="CTR"
                   stroke={SERIES[2]}
                   strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke }}
+                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[2] }}
                 />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="searchImpressionShare"
                   name="Search impression share"
                   stroke={SERIES[5]}
                   strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke }}
+                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[5] }}
                 />
               </LineChart>
             </ResponsiveContainer>

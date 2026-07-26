@@ -257,12 +257,210 @@ export function Donut({
       </ResponsiveContainer>
       {(centerValue || centerLabel) && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
-          <div>
+          {/* Held to ~40% of the ring so a long label can never spill over it. */}
+          <div className="max-w-[40%]">
             {centerValue && <div className="figure text-xl leading-none">{centerValue}</div>}
-            {centerLabel && <div className="eyebrow mt-1.5">{centerLabel}</div>}
+            {centerLabel && (
+              <div className="eyebrow mt-1.5 line-clamp-2 leading-snug">{centerLabel}</div>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Part-to-whole with only two parts. A two-slice pie is unreadable, so the
+ * split is shown as one 100%-wide stacked bar with direct labels instead.
+ */
+export function ShareBar({
+  data,
+  format = (v) => v.toLocaleString("en-US"),
+}: {
+  data: Slice[];
+  format?: (v: number) => string;
+}) {
+  const total = data.reduce((a, d) => a + d.value, 0) || 1;
+  return (
+    <div className="py-2">
+      <div className="flex h-9 w-full gap-0.5 overflow-hidden">
+        {data.map((d) => (
+          <div
+            key={d.name}
+            className="h-full min-w-1"
+            style={{ background: d.color, width: `${(d.value / total) * 100}%` }}
+            title={`${d.name}: ${format(d.value)}`}
+          />
+        ))}
+      </div>
+      <ul className="mt-3">
+        {data.map((d) => (
+          <li
+            key={d.name}
+            className="flex items-center justify-between gap-3 border-b border-border/60 py-1.5 text-xs last:border-0"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0" style={{ background: d.color }} aria-hidden />
+              <span className="truncate text-muted-foreground">{d.name}</span>
+            </span>
+            <span className="shrink-0">
+              <span className="tnum">{format(d.value)}</span>
+              <span className="tnum ml-2 text-muted-foreground">
+                {((d.value / total) * 100).toFixed(1)}%
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Picks the readable form automatically: bar for two parts, donut beyond. */
+export function PartToWhole({
+  data,
+  format,
+  centerLabel,
+  centerValue,
+  height,
+}: {
+  data: Slice[];
+  format?: TooltipFormat;
+  centerLabel?: string;
+  centerValue?: string;
+  height?: number;
+}) {
+  if (data.length < 3) {
+    return <ShareBar data={data} format={format ? (v) => format(v, "") : undefined} />;
+  }
+  return (
+    <Donut
+      data={data}
+      format={format}
+      centerLabel={centerLabel}
+      centerValue={centerValue}
+      height={height}
+    />
+  );
+}
+
+/**
+ * Funnel stages spanning several orders of magnitude. Column bars would
+ * render the tail stages as invisible slivers, so each stage gets its own
+ * full-width track with the value and step conversion beside it.
+ */
+export function FunnelSteps({
+  data,
+  format = (v) => v.toLocaleString("en-US"),
+  /**
+   * "previous" for genuinely sequential stages (impressions → clicks →
+   * leads). "first" when the later stages are parallel actions off the same
+   * base — comparing them to each other would invent a sequence.
+   */
+  relativeTo = "previous",
+}: {
+  data: { label: string; value: number }[];
+  format?: (v: number) => string;
+  relativeTo?: "previous" | "first";
+}) {
+  const top = data[0]?.value || 1;
+  const baseLabel = data[0]?.label.toLowerCase() ?? "the first stage";
+  return (
+    <ul className="space-y-3 py-1">
+      {data.map((stage, i) => {
+        const base = relativeTo === "first" ? data[0].value : i > 0 ? data[i - 1].value : null;
+        const width = Math.max((stage.value / top) * 100, stage.value > 0 ? 0.6 : 0);
+        return (
+          <li key={stage.label}>
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-xs font-medium">{stage.label}</span>
+              <span className="flex items-baseline gap-2">
+                <span className="tnum text-sm">{format(stage.value)}</span>
+                {i > 0 && base !== null && (
+                  <span className="tnum text-[0.6875rem] text-muted-foreground">
+                    {base > 0
+                      ? `${((stage.value / base) * 100).toFixed(2)}% of ${
+                          relativeTo === "first" ? baseLabel : "previous"
+                        }`
+                      : "—"}
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="mt-1.5 h-2.5 w-full bg-surface-sunken">
+              <div
+                className="h-full"
+                style={{
+                  width: `${width}%`,
+                  background: SEQ[Math.min(i, SEQ.length - 1)],
+                }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * One compact bar chart per metric, each with its own scale. This is the
+ * answer to "several measures, wildly different magnitudes" — a shared axis
+ * would flatten every series but the largest.
+ */
+export function SmallMultiples({
+  series,
+  periods,
+  format = (v) => v.toLocaleString("en-US"),
+}: {
+  series: { name: string; color: string; values: number[] }[];
+  periods: string[];
+  format?: (v: number) => string;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {series.map((s) => (
+        <figure key={s.name} className="min-w-0">
+          <figcaption className="mb-1 flex items-center gap-1.5 text-xs font-medium">
+            <span className="h-2.5 w-2.5 shrink-0" style={{ background: s.color }} aria-hidden />
+            <span className="truncate">{s.name}</span>
+            <span className="tnum ml-auto shrink-0 text-muted-foreground">
+              {format(s.values.reduce((a, v) => a + v, 0))}
+            </span>
+          </figcaption>
+          <div className="h-32">
+            <ResponsiveContainer>
+              <BarChart
+                data={periods.map((p, i) => ({ label: p, value: s.values[i] ?? 0 }))}
+                margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+              >
+                <CartesianGrid {...gridProps} />
+                <XAxis
+                  dataKey="label"
+                  {...xAxisProps}
+                  height={22}
+                  tick={{ ...tick, fontSize: 10 }}
+                />
+                <YAxis
+                  {...yAxisProps}
+                  width={44}
+                  tickFormatter={(v: number) => format(v)}
+                  tick={{ ...tick, fontSize: 10 }}
+                />
+                <ChartTooltip format={(v) => format(v)} />
+                <Bar
+                  dataKey="value"
+                  name={s.name}
+                  fill={s.color}
+                  radius={[2, 2, 0, 0]}
+                  maxBarSize={22}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </figure>
+      ))}
     </div>
   );
 }

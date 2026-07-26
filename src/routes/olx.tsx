@@ -8,7 +8,7 @@ import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule, Note } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
 import { AiPanel } from "@/components/ai-panel";
-import { Donut, HBarRanking, SERIES, StageBars } from "@/components/charts";
+import { FunnelSteps, HBarRanking, PartToWhole, SERIES, StageBars } from "@/components/charts";
 import { Input } from "@/components/ui/input";
 import { useData } from "@/lib/data-context";
 import { fmtCompact, fmtInt, fmtPct, fmtSom } from "@/lib/metrics";
@@ -233,6 +233,7 @@ function OlxPage() {
     <AppShell
       title="OLX listings"
       subtitle="Marketplace performance"
+      showFilter={false}
       actions={<ExportButton filename="radiocom-olx" sheets={sheets} />}
     >
       <SectionRule label="Marketplace totals" note={q ? `Filtered by “${q}”` : "All listings"} />
@@ -312,7 +313,7 @@ function OlxPage() {
           }}
           empty={categorySlices.length ? undefined : "No views recorded."}
         >
-          <Donut
+          <PartToWhole
             data={categorySlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(totals.views)}
@@ -345,23 +346,24 @@ function OlxPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="Marketplace funnel"
+          title="Engagement per listing view"
           hint="Lifetime, across listings in view"
+          note="Favourites and phone clicks are parallel actions off the same views, not sequential stages, so both are shown as a share of views."
           table={{
             columns: [
               { key: "stage", header: "Stage" },
               { key: "value", header: "Count", numeric: true },
               { key: "rate", header: "From views", numeric: true },
             ],
-            rows: funnel.map((f) => ({
+            rows: funnel.map((f, i) => ({
               stage: f.label,
               value: fmtInt(f.value),
-              rate: totals.views ? fmtPct((f.value / totals.views) * 100, 2) : "—",
+              rate: i === 0 || !totals.views ? "—" : fmtPct((f.value / totals.views) * 100, 2),
             })),
           }}
           empty={totals.views ? undefined : "No views recorded."}
         >
-          <StageBars data={funnel} format={(v) => fmtCompact(v)} height={240} />
+          <FunnelSteps data={funnel} format={(v) => fmtInt(v)} relativeTo="first" />
         </ChartFrame>
       </div>
 

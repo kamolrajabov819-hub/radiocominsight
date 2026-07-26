@@ -8,7 +8,7 @@ import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule, Note } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
 import { AiPanel } from "@/components/ai-panel";
-import { Donut, HBarRanking, SERIES } from "@/components/charts";
+import { HBarRanking, PartToWhole, SERIES } from "@/components/charts";
 import { useData } from "@/lib/data-context";
 import { fmtDuration, fmtInt, fmtPct, fmtRank, type Delta } from "@/lib/metrics";
 import { GA_INTENT_LABELS, type GaKeyword, type GaMetric } from "@/lib/parsers";
@@ -97,7 +97,12 @@ function GAPage() {
         .filter((k) => k.volume > 0)
         .sort((a, b) => b.volume - a.volume)
         .slice(0, 10)
-        .map((k) => ({ label: k.keyword, value: k.volume })),
+        .map((k) => ({
+          // The same query is tracked at several positions, so the rank
+          // keeps otherwise-identical bars apart.
+          label: k.position != null ? `${k.keyword} (#${k.position})` : k.keyword,
+          value: k.volume,
+        })),
     [keywords],
   );
 
@@ -107,7 +112,10 @@ function GAPage() {
         .filter((k) => k.trafficSharePct > 0)
         .sort((a, b) => b.trafficSharePct - a.trafficSharePct)
         .slice(0, 10)
-        .map((k) => ({ label: k.keyword, value: k.trafficSharePct })),
+        .map((k) => ({
+          label: k.position != null ? `${k.keyword} (#${k.position})` : k.keyword,
+          value: k.trafficSharePct,
+        })),
     [keywords],
   );
 
@@ -285,6 +293,7 @@ function GAPage() {
     <AppShell
       title="Analytics & SEO"
       subtitle="radiocom.uz organic performance"
+      showFilter={false}
       actions={<ExportButton filename="radiocom-analytics-seo" sheets={sheets} />}
     >
       <SectionRule label="Site engagement" note="Latest reading in the workbook" />
@@ -392,7 +401,7 @@ function GAPage() {
           }}
           empty={segments.length ? undefined : "No visit segments recorded."}
         >
-          <Donut
+          <PartToWhole
             data={segments}
             format={(v) => fmtPct(v, 2)}
             centerValue={segments.length ? fmtPct(segments[0].value, 1) : "—"}
@@ -413,7 +422,7 @@ function GAPage() {
           }}
           empty={intentMix.length ? undefined : "No intent codes recorded."}
         >
-          <Donut
+          <PartToWhole
             data={intentMix}
             format={(v) => `${v} keyword${v === 1 ? "" : "s"}`}
             centerValue={String(keywords.length)}

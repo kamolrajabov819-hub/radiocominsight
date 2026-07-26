@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -46,16 +46,34 @@ const NAV: { group: string; items: { to: string; label: string; icon: typeof Tar
   },
 ];
 
+/**
+ * Rendered only after mount. The fetch timestamp is non-deterministic — the
+ * SSR pass and the browser can land on different values — and the browser
+ * formats it in a different zone, so anything derived from it during the
+ * first render fails hydration.
+ */
+function SyncedAt({ iso }: { iso: string }) {
+  const [local, setLocal] = useState<string | null>(null);
+  useEffect(() => {
+    setLocal(new Date(iso).toLocaleString(undefined, { hour12: false }));
+  }, [iso]);
+  if (!local) return <span className="tnum">just now</span>;
+  return <span className="tnum">{local}</span>;
+}
+
 export function AppShell({
   children,
   title,
   subtitle,
   actions,
+  /** Off for tabs whose data is not reported by quarter (SEO, OLX). */
+  showFilter = true,
 }: {
   children: ReactNode;
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  showFilter?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { sourceError, quarter, fetchedAt } = useData();
@@ -121,7 +139,9 @@ export function AppShell({
             {sourceError ? (
               <span className="text-negative">Sync failed</span>
             ) : (
-              <>Synced {new Date(fetchedAt).toLocaleString("en-GB", { hour12: false })}</>
+              <>
+                Synced <SyncedAt iso={fetchedAt} />
+              </>
             )}
           </p>
         </div>
@@ -156,12 +176,16 @@ export function AppShell({
                 </h1>
                 <p className="truncate text-xs text-muted-foreground">
                   {subtitle ? `${subtitle} · ` : ""}
-                  {quarter ? quarter.label : "All time, blended"}
+                  {showFilter
+                    ? quarter
+                      ? quarter.label
+                      : "All time, blended"
+                    : "Not reported by quarter"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <GlobalFilter />
+            <div className="flex min-w-0 items-center gap-2">
+              {showFilter && <GlobalFilter />}
               {actions}
               <ThemeToggle />
             </div>

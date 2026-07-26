@@ -21,7 +21,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { AiPanel } from "@/components/ai-panel";
 import {
   ChartTooltip,
-  Donut,
+  PartToWhole,
   Grid,
   SERIES,
   StageBars,
@@ -83,7 +83,8 @@ function MetaAdsPage() {
           reach: t.reach,
           impressions: t.impressions,
           clicks: t.clicks,
-          cpl: cpl(t.spend, t.leads),
+          // No leads means no cost per lead — a zero would read as "free".
+          cpl: t.leads > 0 ? cpl(t.spend, t.leads) : null,
           ctr: ctr(t.clicks, t.impressions),
           cpc: cpc(t.spend, t.clicks),
           cpm: cpm(t.spend, t.impressions),
@@ -291,7 +292,7 @@ function MetaAdsPage() {
           lowerIsBetter
           delta={prev ? delta(cpl(s.spend, s.leads), cpl(prev.spend, prev.leads)) : null}
           deltaSuffix={deltaSuffix}
-          trend={byQuarter.map((q) => q.cpl)}
+          trend={byQuarter.flatMap((q) => (q.cpl == null ? [] : [q.cpl]))}
           trendColor={SERIES[2]}
         />
         <StatTile
@@ -386,7 +387,7 @@ function MetaAdsPage() {
               label: q.label,
               spend: fmtMoney(q.spend),
               leads: fmtInt(q.leads),
-              cpl: q.cpl ? fmtMoney(q.cpl) : "—",
+              cpl: q.cpl != null ? fmtMoney(q.cpl) : "—",
             })),
           }}
           empty={byQuarter.length ? undefined : "No Meta Ads rows found in the workbook."}
@@ -433,7 +434,7 @@ function MetaAdsPage() {
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
-              cpl: q.cpl ? fmtMoney(q.cpl) : "—",
+              cpl: q.cpl != null ? fmtMoney(q.cpl) : "—",
               cpc: q.cpc ? fmtMoney(q.cpc) : "—",
               cpm: fmtMoney(q.cpm),
             })),
@@ -448,12 +449,13 @@ function MetaAdsPage() {
                 <YAxis {...yAxisProps} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
                 <ChartTooltip format={(v) => fmtMoney(v)} cursor={lineCursor} />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="cpl"
                   name="Cost per lead"
                   stroke={SERIES[2]}
                   strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke }}
+                  connectNulls={false}
+                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[2] }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
@@ -495,7 +497,7 @@ function MetaAdsPage() {
                 <YAxis {...yAxisProps} tickFormatter={(v: number) => fmtCompact(v)} />
                 <ChartTooltip format={(v) => fmtInt(v)} cursor={lineCursor} />
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="impressions"
                   name="Impressions"
                   stroke={SERIES[3]}
@@ -504,7 +506,7 @@ function MetaAdsPage() {
                   fillOpacity={0.12}
                 />
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="reach"
                   name="Reach"
                   stroke={SERIES[4]}
@@ -530,7 +532,7 @@ function MetaAdsPage() {
           }}
           empty={engagementSlices.length ? undefined : "No engagement recorded for this period."}
         >
-          <Donut
+          <PartToWhole
             data={engagementSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(engagementSlices.reduce((a, d) => a + d.value, 0))}

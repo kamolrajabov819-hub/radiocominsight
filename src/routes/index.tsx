@@ -20,10 +20,10 @@ import { AiPanel } from "@/components/ai-panel";
 import {
   CHANNEL_COLOR,
   ChartTooltip,
-  Donut,
+  FunnelSteps,
   Grid,
   HBarRanking,
-  StageBars,
+  PartToWhole,
   SERIES,
   lineCursor,
   surfaceStroke,
@@ -140,7 +140,9 @@ function Overview() {
           leads: r.conversions,
           impressions: r.impressions,
           clicks: r.clicks,
-          cpl: cpl(r.spend, r.conversions),
+          // A quarter with no conversions has no CPL — a zero here would
+          // read as "free leads" instead of "no leads".
+          cpl: r.conversions > 0 ? cpl(r.spend, r.conversions) : null,
           ctr: ctr(r.clicks, r.impressions),
         };
       }),
@@ -269,7 +271,7 @@ function Overview() {
           lowerIsBetter
           delta={prev ? delta(blendedCpl, cpl(prev.spend, prev.conversions)) : null}
           deltaSuffix={deltaSuffix}
-          trend={byQuarter.map((q) => q.cpl)}
+          trend={byQuarter.flatMap((q) => (q.cpl == null ? [] : [q.cpl]))}
           trendColor={SERIES[2]}
         />
         <StatTile
@@ -368,7 +370,7 @@ function Overview() {
           }}
           empty={spendSlices.length ? undefined : "No spend recorded for this period."}
         >
-          <Donut
+          <PartToWhole
             data={spendSlices}
             format={(v) => fmtMoney(v)}
             centerValue={fmtMoney(now.spend)}
@@ -396,7 +398,7 @@ function Overview() {
           }}
           empty={leadSlices.length ? undefined : "No conversions recorded for this period."}
         >
-          <Donut
+          <PartToWhole
             data={leadSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtInt(now.conversions)}
@@ -416,7 +418,7 @@ function Overview() {
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
-              cpl: q.cpl > 0 ? fmtMoney(q.cpl) : "—",
+              cpl: q.cpl != null ? fmtMoney(q.cpl) : "—",
               spend: fmtMoney(q.spend),
               leads: fmtInt(q.leads),
             })),
@@ -431,12 +433,13 @@ function Overview() {
                 <YAxis {...yAxisProps} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
                 <ChartTooltip format={(v) => fmtMoney(v)} cursor={lineCursor} />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="cpl"
                   name="Blended CPL"
                   stroke={SERIES[0]}
                   strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke }}
+                  connectNulls={false}
+                  dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[0] }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
@@ -447,7 +450,7 @@ function Overview() {
         <ChartFrame
           title="Funnel"
           hint={quarter ? quarter.label : "All time"}
-          note="Stages are ordered, so they use the sequential ramp rather than category colours."
+          note="Stages span three orders of magnitude, so each gets its own track with the step conversion beside it."
           table={{
             columns: [
               { key: "stage", header: "Stage" },
@@ -465,7 +468,7 @@ function Overview() {
           }}
           empty={now.impressions ? undefined : "No impressions recorded for this period."}
         >
-          <StageBars data={funnel} format={(v) => fmtCompact(v)} height={240} />
+          <FunnelSteps data={funnel} format={(v) => fmtInt(v)} />
         </ChartFrame>
       </div>
 
@@ -483,16 +486,33 @@ function Overview() {
             rows: paid.map((c) => ({ channel: c.name, cpl: fmtMoney(c.cpl) })),
           }}
           empty={paid.length ? undefined : "No channel reported both spend and conversions."}
+          note={
+            paid.length === 1
+              ? "Only one channel reports both spend and conversions, so there is nothing to rank — the figure is shown on its own."
+              : undefined
+          }
         >
-          <HBarRanking
-            data={[...paid]
-              .sort((a, b) => b.cpl - a.cpl)
-              .map((c) => ({ label: c.name, value: c.cpl }))}
-            color={SERIES[0]}
-            seriesName="CPL"
-            format={(v) => fmtMoney(v)}
-            labelWidth={92}
-          />
+          {paid.length === 1 ? (
+            // A one-bar bar chart is just a number wearing a costume.
+            <div className="flex h-full flex-col justify-center py-6">
+              <div className="figure text-4xl leading-none">{fmtMoney(paid[0].cpl)}</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="h-2.5 w-2.5" style={{ background: paid[0].color }} aria-hidden />
+                {paid[0].name} · {fmtInt(paid[0].conversions)} conversions from{" "}
+                {fmtMoney(paid[0].spend)}
+              </div>
+            </div>
+          ) : (
+            <HBarRanking
+              data={[...paid]
+                .sort((a, b) => b.cpl - a.cpl)
+                .map((c) => ({ label: c.name, value: c.cpl }))}
+              color={SERIES[0]}
+              seriesName="CPL"
+              format={(v) => fmtMoney(v)}
+              labelWidth={92}
+            />
+          )}
         </ChartFrame>
 
         <ChartFrame

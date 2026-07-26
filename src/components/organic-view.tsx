@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AppShell } from "@/components/app-shell";
 import { StatTile } from "@/components/stat";
 import { ExportButton } from "@/components/export-button";
@@ -9,9 +9,10 @@ import { DataTable, type Column } from "@/components/data-table";
 import { AiPanel } from "@/components/ai-panel";
 import {
   ChartTooltip,
-  Donut,
   Grid,
+  PartToWhole,
   SERIES,
+  SmallMultiples,
   lineCursor,
   surfaceStroke,
   xAxisProps,
@@ -154,8 +155,8 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
         <ChartFrame
           className="xl:col-span-2"
           title="Headline metrics by quarter"
-          hint="Grouped bars"
-          legend={trendSeries.map((k, i) => ({ label: k, color: SERIES[i % SERIES.length] }))}
+          hint="One panel per metric, each on its own scale"
+          note="Media views run three orders of magnitude above engagements, so a shared axis would flatten every series but the largest. Each panel keeps its own scale; the totals sit beside the labels."
           table={{
             columns: [
               { key: "label", header: "Quarter" },
@@ -171,30 +172,15 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
           }}
           empty={trendSeries.length ? undefined : "None of the headline metrics exist in this tab."}
         >
-          <div className="h-72">
-            <ResponsiveContainer>
-              <BarChart
-                data={byQuarter}
-                margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-                barGap={2}
-              >
-                <Grid />
-                <XAxis dataKey="label" {...xAxisProps} />
-                <YAxis {...yAxisProps} tickFormatter={(v: number) => fmtCompact(v)} />
-                <ChartTooltip format={(v) => fmtInt(v)} />
-                {trendSeries.map((k, i) => (
-                  <Bar
-                    key={k}
-                    dataKey={k}
-                    name={k}
-                    fill={SERIES[i % SERIES.length]}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={26}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <SmallMultiples
+            periods={all.map((p) => p.short)}
+            format={(v) => fmtCompact(v)}
+            series={trendSeries.map((k, i) => ({
+              name: k,
+              color: SERIES[i % SERIES.length],
+              values: all.map((p) => p.metrics[k] ?? 0),
+            }))}
+          />
         </ChartFrame>
 
         <ChartFrame
@@ -210,7 +196,7 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
           }}
           empty={mixSlices.length ? undefined : "No interactions recorded for this period."}
         >
-          <Donut
+          <PartToWhole
             data={mixSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(mixSlices.reduce((a, d) => a + d.value, 0))}
@@ -264,7 +250,7 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
                 <YAxis {...yAxisProps} tickFormatter={(v: number) => fmtCompact(v)} />
                 <ChartTooltip format={(v) => fmtInt(v)} cursor={lineCursor} />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="value"
                   name={explored}
                   stroke={SERIES[0]}
