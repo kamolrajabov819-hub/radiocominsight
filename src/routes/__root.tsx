@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Suspense } from "react";
+import { DataProvider, allTabsQuery } from "@/lib/data-context";
 
 function NotFoundComponent() {
   return (
@@ -73,15 +75,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(allTabsQuery);
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Radiocom Analytics Hub" },
+      { name: "description", content: "Cross-channel paid & organic marketing analytics for Radiocom — Meta, Google, OLX, Facebook & Instagram." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Radiocom Analytics Hub" },
+      { property: "og:description", content: "Cross-channel paid & organic marketing analytics dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -119,8 +124,22 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <Suspense fallback={<LoadingScreen />}>
+        <DataProvider>
+          <Outlet />
+        </DataProvider>
+      </Suspense>
     </QueryClientProvider>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-background text-muted-foreground">
+      <div className="flex items-center gap-3 text-sm">
+        <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+        Loading Radiocom analytics…
+      </div>
+    </div>
   );
 }
