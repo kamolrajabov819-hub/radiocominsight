@@ -18,9 +18,7 @@ export default defineTool({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
-      .describe(
-        "Period end date (YYYY-MM-DD) from list_periods. Required if date_start is provided.",
-      ),
+      .describe("Period end date (YYYY-MM-DD) from list_periods. Required if date_start is provided."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ date_start, date_stop }) => {
