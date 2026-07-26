@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ldfrhwhgtripozkzhsyq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "radiocom-analytics-mcp",
+      "version": "0.1.0",
+      "title": "Radiocom Analytics Hub"
+    },
+    "tools": [
+      {
+        "name": "list_periods",
+        "title": "List available reporting periods",
+        "description": "List the distinct reporting periods (date_start / date_stop) available in the Meta Ads and Google Ads data, including quarter labels when applicable.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_dashboard_summary",
+        "title": "Get Radiocom dashboard summary",
+        "description": "Return a blended marketing performance summary across Meta Ads and Google Ads: total spend, leads, impressions, clicks, blended cost-per-lead, CTR and CPC. Optionally scope to one reporting period returned by list_periods.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "date_start": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Period start date (YYYY-MM-DD) from list_periods. Omit for all-time totals."
+            },
+            "date_stop": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Period end date (YYYY-MM-DD) from list_periods. Required if date_start is provided."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_olx_products",
+        "title": "Get OLX product performance",
+        "description": "Return product-level performance from the OLX listings: name, price, views, favorites (likes), phone clicks and CTR. Optionally limit the number of rows and sort by a metric.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Maximum number of rows to return. Defaults to 25."
+            },
+            "sort_by": {
+              "type": "string",
+              "enum": [
+                "views",
+                "favorites",
+                "phone_clicks",
+                "price"
+              ],
+              "description": "Metric to sort by, descending. Defaults to views."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_organic_stats",
+        "title": "Get organic social stats",
+        "description": "Return organic social performance periods for Facebook or Instagram: reach, impressions, follower changes, and per-metric breakdown.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "channel": {
+              "type": "string",
+              "enum": [
+                "facebook",
+                "instagram"
+              ],
+              "description": "Which organic channel to report on."
+            }
+          },
+          "required": [
+            "channel"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
