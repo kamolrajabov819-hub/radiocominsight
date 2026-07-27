@@ -11,6 +11,7 @@ import { AiPanel } from "@/components/ai-panel";
 import { FunnelSteps, HBarRanking, PartToWhole, SERIES, StageBars } from "@/components/charts";
 import { Input } from "@/components/ui/input";
 import { useData } from "@/lib/data-context";
+import { useI18n } from "@/lib/i18n";
 import { fmtCompact, fmtInt, fmtPct, fmtSom } from "@/lib/metrics";
 import type { OlxProduct } from "@/lib/parsers";
 
@@ -35,6 +36,9 @@ const MAX_SLICES = 5;
 
 function OlxPage() {
   const { data } = useData();
+  const { t } = useI18n();
+  /** The parser emits an English placeholder for blank categories. */
+  const catLabel = (c: string) => (c === "Uncategorised" ? t("olx.uncategorised") : c);
   const [q, setQ] = useState("");
 
   const products = useMemo(() => {
@@ -71,7 +75,7 @@ function OlxPage() {
       });
     });
     return Array.from(map.entries())
-      .map(([category, v]) => ({ category, ...v }))
+      .map(([category, v]) => ({ category: catLabel(category), ...v }))
       .sort((a, b) => b.views - a.views);
   }, [products]);
 
@@ -85,7 +89,7 @@ function OlxPage() {
     }));
     if (tail.length) {
       slices.push({
-        name: `Other (${tail.length})`,
+        name: t("olx.other", { n: tail.length }),
         value: tail.reduce((a, c) => a + c.views, 0),
         color: SERIES[MAX_SLICES] as string,
       });
@@ -119,62 +123,62 @@ function OlxPage() {
   }, [products]);
 
   const funnel = [
-    { label: "Views", value: totals.views },
-    { label: "Favourites", value: totals.favorites },
-    { label: "Phone clicks", value: totals.calls },
+    { label: t("olx.views"), value: totals.views },
+    { label: t("olx.favourites"), value: totals.favorites },
+    { label: t("olx.phoneClicks"), value: totals.calls },
   ];
 
   const columns: Column<OlxProduct>[] = [
     {
       key: "name",
-      header: "Listing",
+      header: t("olx.listing"),
       cell: (p) => <span title={p.name}>{shorten(p.name, 48)}</span>,
       sortValue: (p) => p.name,
     },
     {
       key: "category",
-      header: "Category",
-      cell: (p) => <span className="text-muted-foreground">{p.category}</span>,
+      header: t("olx.category"),
+      cell: (p) => <span className="text-muted-foreground">{catLabel(p.category)}</span>,
       sortValue: (p) => p.category,
     },
     {
       key: "price",
-      header: "Price",
+      header: t("olx.price"),
       numeric: true,
       cell: (p) => fmtSom(p.price),
       sortValue: (p) => p.price,
     },
     {
       key: "views",
-      header: "Views",
+      header: t("olx.views"),
       numeric: true,
       cell: (p) => fmtInt(p.views),
       sortValue: (p) => p.views,
     },
     {
       key: "favorites",
-      header: "Favourites",
+      header: t("olx.favourites"),
       numeric: true,
       cell: (p) => fmtInt(p.favorites),
       sortValue: (p) => p.favorites,
     },
     {
       key: "calls",
-      header: "Phone clicks",
+      header: t("olx.phoneClicks"),
       numeric: true,
       cell: (p) => fmtInt(p.phoneClicks),
       sortValue: (p) => p.phoneClicks,
     },
     {
       key: "ctr",
-      header: "Contact rate",
+      header: t("olx.contactRate"),
       numeric: true,
       cell: (p) => (p.ctrPct ? fmtPct(p.ctrPct, 1) : "—"),
       sortValue: (p) => p.ctrPct,
     },
     {
       key: "adId",
-      header: "Ad ID",
+      header: t("olx.adId"),
       numeric: true,
       cell: (p) => p.adId || "—",
       sortValue: (p) => p.adId,
@@ -231,77 +235,86 @@ function OlxPage() {
 
   return (
     <AppShell
-      title="OLX listings"
-      subtitle="Marketplace performance"
+      title={t("olx.title")}
+      subtitle={t("olx.subtitle")}
       showFilter={false}
       actions={<ExportButton filename="radiocom-olx" sheets={sheets} />}
     >
-      <SectionRule label="Marketplace totals" note={q ? `Filtered by “${q}”` : "All listings"} />
+      <SectionRule
+        label={t("olx.totals")}
+        note={q ? t("olx.filteredBy", { q }) : t("olx.allListings")}
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        <StatTile accent label="Listings" value={fmtInt(products.length)} icon={ShoppingBag} />
         <StatTile
-          label="Views"
+          accent
+          label={t("olx.listings")}
+          value={fmtInt(products.length)}
+          icon={ShoppingBag}
+        />
+        <StatTile
+          label={t("olx.views")}
           value={fmtCompact(totals.views)}
           sub={fmtInt(totals.views)}
           icon={Eye}
         />
-        <StatTile label="Favourites" value={fmtInt(totals.favorites)} icon={Heart} />
-        <StatTile label="Phone clicks" value={fmtInt(totals.calls)} icon={PhoneCall} />
+        <StatTile label={t("olx.favourites")} value={fmtInt(totals.favorites)} icon={Heart} />
+        <StatTile label={t("olx.phoneClicks")} value={fmtInt(totals.calls)} icon={PhoneCall} />
         <StatTile
-          label="Contact rate"
+          label={t("olx.contactRate")}
           value={fmtPct(contactRate, 2)}
-          sub="Phone clicks ÷ views"
+          sub={t("olx.contactRateHint")}
           icon={Target}
         />
         <StatTile
-          label="Catalogue value"
+          label={t("olx.catalogueValue")}
           value={fmtCompact(totals.value)}
-          sub="Sum of listed prices, so'm"
+          sub={t("olx.catalogueValueHint")}
         />
       </div>
 
-      <Note>
-        OLX counters in the workbook are lifetime totals per listing rather than quarterly figures,
-        so this page ignores the period filter in the header.
-      </Note>
+      <Note>{t("olx.lifetimeNote")}</Note>
 
-      <SectionRule label="Where the attention goes" />
+      <SectionRule label={t("olx.attention")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Most viewed listings"
-          hint="Top 12 by lifetime views"
+          title={t("olx.mostViewed")}
+          hint={t("olx.mostViewedHint")}
           table={{
             columns: [
-              { key: "listing", header: "Listing" },
-              { key: "views", header: "Views", numeric: true },
+              { key: "listing", header: t("olx.listing") },
+              { key: "views", header: t("olx.views"), numeric: true },
             ],
             rows: topByViews.map((p) => ({ listing: p.label, views: fmtInt(p.value) })),
           }}
-          empty={topByViews.length ? undefined : "No listings match this search."}
+          empty={topByViews.length ? undefined : t("olx.noMatch")}
         >
           <HBarRanking
             data={topByViews}
             color={SERIES[2]}
-            seriesName="Views"
+            seriesName={t("olx.views")}
             format={(v) => fmtInt(v)}
             labelWidth={230}
           />
         </ChartFrame>
 
         <ChartFrame
-          title="Views by category"
-          hint={`${byCategory.length} categor${byCategory.length === 1 ? "y" : "ies"}`}
+          title={t("olx.viewsByCategory")}
+          hint={
+            byCategory.length === 1
+              ? t("olx.categoryOne")
+              : t("olx.categories", { n: byCategory.length })
+          }
           legend={categorySlices.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "category", header: "Category" },
-              { key: "listings", header: "Listings", numeric: true },
-              { key: "views", header: "Views", numeric: true },
-              { key: "calls", header: "Phone clicks", numeric: true },
-              { key: "rate", header: "Contact rate", numeric: true },
+              { key: "category", header: t("olx.category") },
+              { key: "listings", header: t("olx.listings"), numeric: true },
+              { key: "views", header: t("olx.views"), numeric: true },
+              { key: "calls", header: t("olx.phoneClicks"), numeric: true },
+              { key: "rate", header: t("olx.contactRate"), numeric: true },
             ],
             rows: byCategory.map((c) => ({
               category: c.category,
@@ -311,13 +324,13 @@ function OlxPage() {
               rate: fmtPct(c.views ? (c.calls / c.views) * 100 : 0, 1),
             })),
           }}
-          empty={categorySlices.length ? undefined : "No views recorded."}
+          empty={categorySlices.length ? undefined : t("olx.noViews")}
         >
           <PartToWhole
             data={categorySlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(totals.views)}
-            centerLabel="Total views"
+            centerLabel={t("olx.views")}
           />
         </ChartFrame>
       </div>
@@ -325,35 +338,35 @@ function OlxPage() {
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Most contacted listings"
-          hint="Top 12 by phone clicks"
+          title={t("olx.mostContacted")}
+          hint={t("olx.mostContactedHint")}
           table={{
             columns: [
-              { key: "listing", header: "Listing" },
-              { key: "calls", header: "Phone clicks", numeric: true },
+              { key: "listing", header: t("olx.listing") },
+              { key: "calls", header: t("olx.phoneClicks"), numeric: true },
             ],
             rows: topByCalls.map((p) => ({ listing: p.label, calls: fmtInt(p.value) })),
           }}
-          empty={topByCalls.length ? undefined : "No listings match this search."}
+          empty={topByCalls.length ? undefined : t("olx.noMatch")}
         >
           <HBarRanking
             data={topByCalls}
             color={SERIES[0]}
-            seriesName="Phone clicks"
+            seriesName={t("olx.phoneClicks")}
             format={(v) => fmtInt(v)}
             labelWidth={230}
           />
         </ChartFrame>
 
         <ChartFrame
-          title="Engagement per listing view"
-          hint="Lifetime, across listings in view"
-          note="Favourites and phone clicks are parallel actions off the same views, not sequential stages, so both are shown as a share of views."
+          title={t("olx.engagementPerView")}
+          hint={t("olx.engagementPerViewHint")}
+          note={t("olx.engagementPerViewNote")}
           table={{
             columns: [
-              { key: "stage", header: "Stage" },
-              { key: "value", header: "Count", numeric: true },
-              { key: "rate", header: "From views", numeric: true },
+              { key: "stage", header: t("common.stage") },
+              { key: "value", header: t("common.count"), numeric: true },
+              { key: "rate", header: t("olx.fromViews"), numeric: true },
             ],
             rows: funnel.map((f, i) => ({
               stage: f.label,
@@ -361,7 +374,7 @@ function OlxPage() {
               rate: i === 0 || !totals.views ? "—" : fmtPct((f.value / totals.views) * 100, 2),
             })),
           }}
-          empty={totals.views ? undefined : "No views recorded."}
+          empty={totals.views ? undefined : t("olx.noViews")}
         >
           <FunnelSteps data={funnel} format={(v) => fmtInt(v)} relativeTo="first" />
         </ChartFrame>
@@ -369,28 +382,31 @@ function OlxPage() {
 
       <div className="mt-3">
         <ChartFrame
-          title="Contact-rate spread"
-          hint="How many listings fall in each contact-rate band"
-          note="Bands are ordered, so they use the sequential ramp rather than category colours."
+          title={t("olx.spread")}
+          hint={t("olx.spreadHint")}
+          note={t("olx.spreadNote")}
           table={{
             columns: [
-              { key: "band", header: "Contact rate" },
-              { key: "count", header: "Listings", numeric: true },
+              { key: "band", header: t("olx.band") },
+              { key: "count", header: t("olx.listings"), numeric: true },
             ],
             rows: ctrBands.map((b) => ({ band: b.label, count: b.value })),
           }}
-          empty={products.length ? undefined : "No listings match this search."}
+          empty={products.length ? undefined : t("olx.noMatch")}
         >
           <StageBars data={ctrBands} format={(v) => fmtInt(v)} height={220} />
         </ChartFrame>
       </div>
 
-      <SectionRule label="Every listing" note={`${products.length} of ${data.olx.length}`} />
+      <SectionRule
+        label={t("olx.everyListing")}
+        note={t("common.nOfTotal", { n: products.length, total: data.olx.length })}
+      />
       <div className="border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h2 className="text-[0.9375rem] font-bold">Listing breakdown</h2>
+          <h2 className="text-[0.9375rem] font-bold">{t("olx.breakdown")}</h2>
           <Input
-            placeholder="Search listing or category…"
+            placeholder={t("olx.search")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="max-w-xs"
@@ -404,9 +420,9 @@ function OlxPage() {
         />
       </div>
 
-      <SectionRule label="Advisory" />
+      <SectionRule label={t("common.advisory")} />
       <AiPanel
-        context="the OLX marketplace listings"
+        context={t("olx.aiContext")}
         payload={{
           scope: q ? `filtered by "${q}"` : "all listings",
           totals: { ...totals, contactRatePct: contactRate, listings: products.length },

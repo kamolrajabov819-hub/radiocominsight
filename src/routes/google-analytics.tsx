@@ -10,8 +10,9 @@ import { DataTable, type Column } from "@/components/data-table";
 import { AiPanel } from "@/components/ai-panel";
 import { HBarRanking, PartToWhole, SERIES } from "@/components/charts";
 import { useData } from "@/lib/data-context";
+import { useI18n, type Translate } from "@/lib/i18n";
 import { fmtDuration, fmtInt, fmtPct, fmtRank, type Delta } from "@/lib/metrics";
-import { GA_INTENT_LABELS, type GaKeyword, type GaMetric } from "@/lib/parsers";
+import type { GaKeyword, GaMetric } from "@/lib/parsers";
 
 export const Route = createFileRoute("/google-analytics")({
   head: () => ({
@@ -51,9 +52,10 @@ function pick(metrics: GaMetric[], needles: string[], sourceHint?: string): GaMe
 }
 
 /** "Источник 2 (поведение)" -> "поведение" for the tile sub-label. */
-const sourceTag = (m?: GaMetric) => {
-  const inner = m?.source.match(/\(([^)]+)\)/)?.[1];
-  return inner ? `Source: ${inner}` : m?.source;
+const sourceTag = (t: Translate, m?: GaMetric) => {
+  if (!m) return undefined;
+  const inner = m.source.match(/\(([^)]+)\)/)?.[1];
+  return inner ? t("ga.source", { s: inner }) : m.source;
 };
 
 const asDelta = (m?: GaMetric): Delta => {
@@ -64,6 +66,11 @@ const asDelta = (m?: GaMetric): Delta => {
 
 function GAPage() {
   const { data } = useData();
+  const { t } = useI18n();
+  const intentLabel = (code: string) => {
+    const c = code.trim().toUpperCase();
+    return c === "I" || c === "N" || c === "C" || c === "T" ? t(`ga.intent.${c}`) : c;
+  };
   const { metrics, keywords } = data.ga;
 
   const totalVisits = pick(metrics, ["Total Visits"]);
@@ -133,7 +140,7 @@ function GAPage() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([code, count], i) => ({
-        name: GA_INTENT_LABELS[code] ?? code,
+        name: intentLabel(code),
         value: count,
         color: SERIES[i % SERIES.length],
       }));
@@ -146,63 +153,68 @@ function GAPage() {
     : 0;
 
   const keywordColumns: Column<GaKeyword>[] = [
-    { key: "keyword", header: "Keyword", cell: (k) => k.keyword, sortValue: (k) => k.keyword },
+    {
+      key: "keyword",
+      header: t("ga.keyword"),
+      cell: (k) => k.keyword,
+      sortValue: (k) => k.keyword,
+    },
     {
       key: "position",
-      header: "Position",
+      header: t("ga.position"),
       numeric: true,
       cell: (k) => (k.position != null ? String(k.position) : "—"),
       sortValue: (k) => k.position ?? 999,
     },
     {
       key: "volume",
-      header: "Volume",
+      header: t("ga.volume"),
       numeric: true,
       cell: (k) => fmtInt(k.volume),
       sortValue: (k) => k.volume,
     },
     {
       key: "kd",
-      header: "Difficulty",
+      header: t("ga.difficulty"),
       numeric: true,
       cell: (k) => (k.kd != null ? String(k.kd) : "—"),
       sortValue: (k) => k.kd ?? 0,
     },
     {
       key: "intent",
-      header: "Intent",
+      header: t("ga.intent"),
       cell: (k) =>
         k.intent
           .split(/[,;/]/)
-          .map((c) => GA_INTENT_LABELS[c.trim().toUpperCase()] ?? c.trim())
+          .map((c) => intentLabel(c))
           .filter(Boolean)
           .join(", ") || "—",
       sortValue: (k) => k.intent,
     },
     {
       key: "cpc",
-      header: "CPC",
+      header: t("ga.cpc"),
       numeric: true,
       cell: (k) => (k.cpc ? `$${k.cpc.toFixed(2)}` : "—"),
       sortValue: (k) => k.cpc,
     },
     {
       key: "traffic",
-      header: "Traffic",
+      header: t("ga.traffic"),
       numeric: true,
       cell: (k) => fmtInt(k.traffic),
       sortValue: (k) => k.traffic,
     },
     {
       key: "share",
-      header: "Share",
+      header: t("common.share"),
       numeric: true,
       cell: (k) => (k.trafficSharePct ? fmtPct(k.trafficSharePct, 1) : "—"),
       sortValue: (k) => k.trafficSharePct,
     },
     {
       key: "url",
-      header: "Landing page",
+      header: t("ga.landingPage"),
       cell: (k) =>
         k.url ? (
           <a
@@ -223,25 +235,30 @@ function GAPage() {
   ];
 
   const metricColumns: Column<GaMetric>[] = [
-    { key: "source", header: "Source", cell: (m) => m.source, sortValue: (m) => m.source },
-    { key: "metric", header: "Metric", cell: (m) => m.metric, sortValue: (m) => m.metric },
+    { key: "source", header: t("shell.source"), cell: (m) => m.source, sortValue: (m) => m.source },
+    {
+      key: "metric",
+      header: t("common.metric"),
+      cell: (m) => m.metric,
+      sortValue: (m) => m.metric,
+    },
     {
       key: "value",
-      header: "Value",
+      header: t("common.value"),
       numeric: true,
       cell: (m) => m.display || m.raw || "—",
       sortValue: (m) => m.value ?? 0,
     },
     {
       key: "change",
-      header: "Change",
+      header: t("common.change"),
       numeric: true,
       cell: (m) => m.changeRaw || "—",
       sortValue: (m) => m.changePct ?? 0,
     },
     {
       key: "note",
-      header: "Note",
+      header: t("common.note"),
       cell: (m) => <span className="text-muted-foreground">{m.note || "—"}</span>,
       sortValue: (m) => m.note,
     },
@@ -291,85 +308,85 @@ function GAPage() {
 
   return (
     <AppShell
-      title="Analytics & SEO"
-      subtitle="radiocom.uz organic performance"
+      title={t("ga.title")}
+      subtitle={t("ga.subtitle")}
       showFilter={false}
       actions={<ExportButton filename="radiocom-analytics-seo" sheets={sheets} />}
     >
-      <SectionRule label="Site engagement" note="Latest reading in the workbook" />
+      <SectionRule label={t("ga.siteEngagement")} note={t("ga.latestReading")} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         <StatTile
           accent
-          label="Total visits"
+          label={t("ga.totalVisits")}
           value={totalVisits?.value != null ? fmtInt(totalVisits.value) : "—"}
-          sub={sourceTag(totalVisits)}
+          sub={sourceTag(t, totalVisits)}
           icon={Users}
         />
         <StatTile
-          label="Visits"
+          label={t("ga.visits")}
           value={visits?.value != null ? fmtInt(visits.value) : "—"}
-          sub={sourceTag(visits)}
+          sub={sourceTag(t, visits)}
           icon={MousePointerClick}
           delta={asDelta(visits)}
-          deltaSuffix="reported"
+          deltaSuffix={t("ga.reported")}
         />
         <StatTile
-          label="Unique visitors"
+          label={t("ga.uniqueVisitors")}
           value={uniqueVisitors?.value != null ? fmtInt(uniqueVisitors.value) : "—"}
-          sub={sourceTag(uniqueVisitors)}
+          sub={sourceTag(t, uniqueVisitors)}
           icon={Users}
           delta={asDelta(uniqueVisitors)}
-          deltaSuffix="reported"
+          deltaSuffix={t("ga.reported")}
         />
         <StatTile
-          label="Bounce rate"
+          label={t("ga.bounceRate")}
           value={bounce?.value != null ? fmtPct(bounce.value, 2) : "—"}
           sub={
             bounceAlt?.value != null && bounceAlt !== bounce
-              ? `${fmtPct(bounceAlt.value, 2)} on the other source`
-              : sourceTag(bounce)
+              ? t("ga.otherSource", { v: fmtPct(bounceAlt.value, 2) })
+              : sourceTag(t, bounce)
           }
           lowerIsBetter
           delta={asDelta(bounce)}
-          deltaSuffix="reported"
+          deltaSuffix={t("ga.reported")}
         />
         <StatTile
-          label="Pages per visit"
+          label={t("ga.pagesPerVisit")}
           value={pagesPerVisit?.value != null ? pagesPerVisit.value.toFixed(2) : "—"}
-          sub={sourceTag(pagesPerVisit)}
+          sub={sourceTag(t, pagesPerVisit)}
           delta={asDelta(pagesPerVisit)}
-          deltaSuffix="reported"
+          deltaSuffix={t("ga.reported")}
         />
         <StatTile
-          label="Avg. visit duration"
+          label={t("ga.avgDuration")}
           value={duration?.value != null ? fmtDuration(duration.value) : "—"}
-          sub={sourceTag(duration)}
+          sub={sourceTag(t, duration)}
           icon={Clock}
           delta={asDelta(duration)}
-          deltaSuffix="reported"
+          deltaSuffix={t("ga.reported")}
         />
       </div>
 
-      <SectionRule label="Domain standing" note="Lower is better on all three ranks" />
+      <SectionRule label={t("ga.domainStanding")} note={t("ga.rankHint")} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
-          label="Global rank"
+          label={t("ga.globalRank")}
           value={globalRank?.value != null ? fmtRank(globalRank.value) : "—"}
-          sub={globalRank?.changeRaw ? `moved ${globalRank.changeRaw}` : undefined}
+          sub={globalRank?.changeRaw ? t("ga.moved", { v: globalRank.changeRaw }) : undefined}
           icon={Globe2}
         />
         <StatTile
-          label="Country rank — Uzbekistan"
+          label={t("ga.countryRank")}
           value={countryRank?.value != null ? fmtRank(countryRank.value) : "—"}
-          sub={countryRank?.changeRaw ? `moved ${countryRank.changeRaw}` : undefined}
+          sub={countryRank?.changeRaw ? t("ga.moved", { v: countryRank.changeRaw }) : undefined}
           icon={MapPin}
         />
         <StatTile
-          label="Category rank"
+          label={t("ga.categoryRank")}
           value={categoryRank?.value != null ? fmtRank(categoryRank.value) : "—"}
-          sub="Computers, electronics & technology"
+          sub={t("ga.categoryName")}
           icon={Search}
         />
       </div>
@@ -380,18 +397,18 @@ function GAPage() {
         the sheet, not quarter-over-quarter values computed here.
       </Note>
 
-      <SectionRule label="Audience split & keyword intent" />
+      <SectionRule label={t("ga.audienceIntent")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
-          title="Visit segments"
-          hint="Share of visits, as recorded in the sheet"
+          title={t("ga.segments")}
+          hint={t("ga.segmentsHint")}
           legend={segments.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "segment", header: "Segment" },
-              { key: "share", header: "Share", numeric: true },
-              { key: "note", header: "Note" },
+              { key: "segment", header: t("ga.segment") },
+              { key: "share", header: t("common.share"), numeric: true },
+              { key: "note", header: t("common.note") },
             ],
             rows: segments.map((s) => ({
               segment: s.name,
@@ -399,7 +416,7 @@ function GAPage() {
               note: s.note || "—",
             })),
           }}
-          empty={segments.length ? undefined : "No visit segments recorded."}
+          empty={segments.length ? undefined : t("ga.noSegments")}
         >
           <PartToWhole
             data={segments}
@@ -410,93 +427,93 @@ function GAPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="Keyword intent mix"
-          hint={`${keywords.length} tracked queries`}
+          title={t("ga.intentMix")}
+          hint={t("ga.trackedQueries", { n: keywords.length })}
           legend={intentMix.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "intent", header: "Intent" },
-              { key: "count", header: "Keywords", numeric: true },
+              { key: "intent", header: t("ga.intent") },
+              { key: "count", header: t("ga.keywords"), numeric: true },
             ],
             rows: intentMix.map((s) => ({ intent: s.name, count: s.value })),
           }}
-          empty={intentMix.length ? undefined : "No intent codes recorded."}
+          empty={intentMix.length ? undefined : t("ga.noIntent")}
         >
           <PartToWhole
             data={intentMix}
             format={(v) => `${v} keyword${v === 1 ? "" : "s"}`}
             centerValue={String(keywords.length)}
-            centerLabel="Keywords"
+            centerLabel={t("ga.keywords")}
           />
         </ChartFrame>
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-1">
-          <StatTile label="Tracked keywords" value={fmtInt(keywords.length)} icon={Search} />
+          <StatTile label={t("ga.trackedKeywords")} value={fmtInt(keywords.length)} icon={Search} />
           <StatTile
-            label="Ranking in top 10"
+            label={t("ga.inTopTen")}
             value={fmtInt(inTopTen)}
-            sub={`of ${ranked.length} ranked`}
+            sub={t("ga.ofRanked", { n: ranked.length })}
           />
           <StatTile
-            label="Average position"
+            label={t("ga.avgPosition")}
             value={avgPosition ? avgPosition.toFixed(1) : "—"}
             lowerIsBetter
           />
           <StatTile
-            label="Combined search volume"
+            label={t("ga.combinedVolume")}
             value={fmtInt(keywords.reduce((a, k) => a + k.volume, 0))}
-            sub="Monthly, across tracked queries"
+            sub={t("ga.combinedVolumeHint")}
           />
         </div>
       </div>
 
-      <SectionRule label="Keyword performance" />
+      <SectionRule label={t("ga.keywordPerformance")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <ChartFrame
-          title="Top keywords by search volume"
-          hint="Monthly searches"
+          title={t("ga.topByVolume")}
+          hint={t("ga.monthlySearches")}
           table={{
             columns: [
-              { key: "keyword", header: "Keyword" },
-              { key: "volume", header: "Volume", numeric: true },
+              { key: "keyword", header: t("ga.keyword") },
+              { key: "volume", header: t("ga.volume"), numeric: true },
             ],
             rows: topByVolume.map((k) => ({ keyword: k.label, volume: fmtInt(k.value) })),
           }}
-          empty={topByVolume.length ? undefined : "No search volume recorded."}
+          empty={topByVolume.length ? undefined : t("ga.noVolume")}
         >
           <HBarRanking
             data={topByVolume}
             color={SERIES[1]}
-            seriesName="Search volume"
+            seriesName={t("ga.volume")}
             format={(v) => fmtInt(v)}
             labelWidth={200}
           />
         </ChartFrame>
 
         <ChartFrame
-          title="Top keywords by traffic share"
-          hint="Share of organic traffic reaching the site"
+          title={t("ga.topByTraffic")}
+          hint={t("ga.trafficShareHint")}
           table={{
             columns: [
-              { key: "keyword", header: "Keyword" },
-              { key: "share", header: "Traffic share", numeric: true },
+              { key: "keyword", header: t("ga.keyword") },
+              { key: "share", header: t("ga.trafficShare"), numeric: true },
             ],
             rows: topByTraffic.map((k) => ({ keyword: k.label, share: fmtPct(k.value, 1) })),
           }}
-          empty={topByTraffic.length ? undefined : "No traffic share recorded."}
+          empty={topByTraffic.length ? undefined : t("ga.noTrafficShare")}
         >
           <HBarRanking
             data={topByTraffic}
             color={SERIES[2]}
-            seriesName="Traffic share"
+            seriesName={t("ga.trafficShare")}
             format={(v) => fmtPct(v, 1)}
             labelWidth={200}
           />
         </ChartFrame>
       </div>
 
-      <SectionRule label="Every tracked query" note={`${keywords.length} keyword(s)`} />
+      <SectionRule label={t("ga.everyQuery")} note={t("ga.keywordCount", { n: keywords.length })} />
       <div className="border border-border bg-surface">
         <DataTable
           columns={keywordColumns}
@@ -506,14 +523,14 @@ function GAPage() {
         />
       </div>
 
-      <SectionRule label="Raw site metrics" note={`${metrics.length} row(s) from the workbook`} />
+      <SectionRule label={t("ga.rawMetrics")} note={t("ga.rawCount", { n: metrics.length })} />
       <div className="border border-border bg-surface">
         <DataTable columns={metricColumns} rows={metrics} maxHeight="26rem" />
       </div>
 
-      <SectionRule label="Advisory" />
+      <SectionRule label={t("common.advisory")} />
       <AiPanel
-        context="organic search and site analytics"
+        context={t("ga.aiContext")}
         payload={{
           siteMetrics: metrics.map((m) => ({
             source: m.source,

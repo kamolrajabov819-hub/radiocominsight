@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Suspense } from "react";
 import { DataProvider, allTabsQuery } from "@/lib/data-context";
 import { ThemeProvider } from "@/components/theme";
+import { LanguageProvider, readLang, type Lang } from "@/lib/i18n";
 import { RadiocomMark } from "@/components/brand";
 
 function NotFoundComponent() {
@@ -77,8 +78,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: ({ context }) => {
+  loader: ({ context }): { lang: Lang } => {
     void context.queryClient.ensureQueryData(allTabsQuery);
+    // Resolved from the cookie on the server so SSR emits the right language.
+    return { lang: readLang() };
   },
   head: () => ({
     meta: [
@@ -139,7 +142,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={readLang()}>
       <head>
         <HeadContent />
       </head>
@@ -153,15 +156,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { lang } = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Suspense fallback={<LoadingScreen />}>
-          <DataProvider>
-            <Outlet />
-          </DataProvider>
-        </Suspense>
+        <LanguageProvider initial={lang}>
+          <Suspense fallback={<LoadingScreen />}>
+            <DataProvider>
+              <Outlet />
+            </DataProvider>
+          </Suspense>
+        </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

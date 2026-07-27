@@ -3,15 +3,15 @@ import { OrganicView, type OrganicSpec } from "@/components/organic-view";
 
 /** Keys match the Facebook Organic tab exactly — see components/organic-view.tsx. */
 const SPEC: OrganicSpec = {
-  title: "Facebook Insights",
-  subtitle: "Organic page performance",
+  title: "org.fbTitle",
+  subtitle: "org.fbSubtitle",
   filenameSlug: "facebook-organic",
   network: "facebook",
   headline: [
-    { key: "Page media views", label: "Media views", compact: true },
-    { key: "Page post engagements", label: "Post engagements" },
-    { key: "Page followers", label: "Page followers" },
-    { key: "Page visits", label: "Page visits" },
+    { key: "Page media views", label: "org.mediaViews", compact: true },
+    { key: "Page post engagements", label: "org.postEngagements" },
+    { key: "Page followers", label: "org.pageFollowers" },
+    { key: "Page visits", label: "org.pageVisits" },
   ],
   trend: ["Page media views", "Page post engagements", "Page visits", "Total page reactions"],
   interactionMix: [

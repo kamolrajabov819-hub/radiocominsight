@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 /* ------------------------------------------------------------------ *
  * Palette
@@ -364,8 +365,9 @@ export function FunnelSteps({
   format?: (v: number) => string;
   relativeTo?: "previous" | "first";
 }) {
+  const { t } = useI18n();
   const top = data[0]?.value || 1;
-  const baseLabel = data[0]?.label.toLowerCase() ?? "the first stage";
+  const baseLabel = data[0]?.label ?? "";
   return (
     <ul className="space-y-3 py-1">
       {data.map((stage, i) => {
@@ -380,9 +382,14 @@ export function FunnelSteps({
                 {i > 0 && base !== null && (
                   <span className="tnum text-[0.6875rem] text-muted-foreground">
                     {base > 0
-                      ? `${((stage.value / base) * 100).toFixed(2)}% of ${
-                          relativeTo === "first" ? baseLabel : "previous"
-                        }`
+                      ? relativeTo === "first"
+                        ? t("common.ofBase", {
+                            v: `${((stage.value / base) * 100).toFixed(2)}%`,
+                            base: baseLabel,
+                          })
+                        : t("common.ofPrevious", {
+                            v: `${((stage.value / base) * 100).toFixed(2)}%`,
+                          })
                       : "—"}
                   </span>
                 )}

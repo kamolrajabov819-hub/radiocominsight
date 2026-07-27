@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useData } from "@/lib/data-context";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * The single filter row for the whole product — every page re-renders
@@ -8,16 +9,17 @@ import { cn } from "@/lib/utils";
  */
 export function GlobalFilter() {
   const { quarters, quarter, setQuarter } = useData();
+  const { t } = useI18n();
   if (!quarters.length) return null;
 
   return (
     <div
       className="flex items-center overflow-x-auto border border-border"
       role="group"
-      aria-label="Reporting period"
+      aria-label={t("common.period")}
     >
       <Option active={!quarter} onClick={() => setQuarter(null)}>
-        All time
+        {t("common.allTime")}
       </Option>
       {quarters.map((q) => (
         <Option

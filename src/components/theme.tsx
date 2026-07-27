@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { Moon, Sun } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 type Theme = "light" | "dark";
 const STORAGE_KEY = "radiocom-theme";
@@ -42,12 +43,13 @@ export const useTheme = () => useContext(ThemeCtx);
 
 export function ThemeToggle() {
   const { theme, toggle } = useTheme();
+  const { t } = useI18n();
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      aria-label={t(theme === "dark" ? "shell.themeToLight" : "shell.themeToDark")}
+      title={t(theme === "dark" ? "shell.themeToLight" : "shell.themeToDark")}
       className="grid h-8 w-8 place-items-center rounded-sm border border-border text-muted-foreground transition-colors hover:bg-surface-sunken hover:text-foreground"
     >
       {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

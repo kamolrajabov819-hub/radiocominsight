@@ -21,6 +21,7 @@ import {
   yAxisProps,
 } from "@/components/charts";
 import { useData } from "@/lib/data-context";
+import { useI18n } from "@/lib/i18n";
 import {
   cpc,
   cpl,
@@ -56,12 +57,13 @@ const NETWORKS = ["Search", "Display & other"] as const;
 
 function GoogleAdsPage() {
   const { data, quarters, quarter, previousQuarter } = useData();
+  const { t } = useI18n();
   const rows = filterByQuarter(data.google, quarter?.key ?? null);
   const s = sumGoogle(rows);
   const prev = previousQuarter
     ? sumGoogle(filterByQuarter(data.google, previousQuarter.key))
     : null;
-  const deltaSuffix = previousQuarter ? `vs ${previousQuarter.short}` : undefined;
+  const deltaSuffix = previousQuarter ? t("h.vs", { q: previousQuarter.short }) : undefined;
 
   const byQuarter = useMemo(
     () =>
@@ -108,10 +110,15 @@ function GoogleAdsPage() {
     .map((t) => ({ name: t.network, value: t.cost, color: t.color }));
 
   const rowColumns: Column<GoogleAdsRow>[] = [
-    { key: "period", header: "Period", cell: (r) => r.label, sortValue: (r) => r.quarter },
+    {
+      key: "period",
+      header: t("common.period.label"),
+      cell: (r) => r.label,
+      sortValue: (r) => r.quarter,
+    },
     {
       key: "network",
-      header: "Network",
+      header: t("m.network"),
       cell: (r) => (
         <span className="flex items-center gap-1.5">
           <span
@@ -126,77 +133,77 @@ function GoogleAdsPage() {
     },
     {
       key: "cost",
-      header: "Cost",
+      header: t("m.cost"),
       numeric: true,
       cell: (r) => fmtMoney(r.cost),
       sortValue: (r) => r.cost,
     },
     {
       key: "impr",
-      header: "Impressions",
+      header: t("m.impressions"),
       numeric: true,
       cell: (r) => fmtInt(r.impressions),
       sortValue: (r) => r.impressions,
     },
     {
       key: "clicks",
-      header: "Clicks",
+      header: t("m.clicks"),
       numeric: true,
       cell: (r) => fmtInt(r.clicks),
       sortValue: (r) => r.clicks,
     },
     {
       key: "ctr",
-      header: "CTR",
+      header: t("m.ctr"),
       numeric: true,
       cell: (r) => fmtPct(ctr(r.clicks, r.impressions), 2),
       sortValue: (r) => ctr(r.clicks, r.impressions),
     },
     {
       key: "cpc",
-      header: "Avg CPC",
+      header: t("m.avgCpc"),
       numeric: true,
       cell: (r) => fmtMoney(cpc(r.cost, r.clicks)),
       sortValue: (r) => cpc(r.cost, r.clicks),
     },
     {
       key: "cpm",
-      header: "Avg CPM",
+      header: t("m.avgCpm"),
       numeric: true,
       cell: (r) => fmtMoney(cpm(r.cost, r.impressions)),
       sortValue: (r) => cpm(r.cost, r.impressions),
     },
     {
       key: "conv",
-      header: "Conversions",
+      header: t("m.conversions"),
       numeric: true,
       cell: (r) => fmtInt(r.conversions),
       sortValue: (r) => r.conversions,
     },
     {
       key: "calls",
-      header: "Phone calls",
+      header: t("m.phoneCalls"),
       numeric: true,
       cell: (r) => fmtInt(r.phoneCalls),
       sortValue: (r) => r.phoneCalls,
     },
     {
       key: "inter",
-      header: "Interactions",
+      header: t("m.interactions"),
       numeric: true,
       cell: (r) => fmtInt(r.interactions),
       sortValue: (r) => r.interactions,
     },
     {
       key: "sis",
-      header: "Impr. share",
+      header: t("m.imprShare"),
       numeric: true,
       cell: (r) => (r.searchImpressionSharePct > 0 ? fmtPct(r.searchImpressionSharePct, 1) : "—"),
       sortValue: (r) => r.searchImpressionSharePct,
     },
     {
       key: "video",
-      header: "Video views",
+      header: t("m.videoViews"),
       numeric: true,
       cell: (r) => fmtInt(r.videoViews),
       sortValue: (r) => r.videoViews,
@@ -280,19 +287,19 @@ function GoogleAdsPage() {
 
   return (
     <AppShell
-      title="Google Ads"
-      subtitle="Search, display and video"
+      title={t("gads.title")}
+      subtitle={t("gads.subtitle")}
       actions={<ExportButton filename="radiocom-google-ads" sheets={sheets} />}
     >
       <SectionRule
-        label="Account totals"
-        note={quarter ? quarter.label : "All quarters combined"}
+        label={t("gads.accountTotals")}
+        note={quarter ? quarter.label : t("common.allQuartersCombined")}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-4">
         <StatTile
           accent
-          label="Cost"
+          label={t("m.cost")}
           value={fmtMoney(s.cost)}
           icon={DollarSign}
           delta={prev ? delta(s.cost, prev.cost) : null}
@@ -301,7 +308,7 @@ function GoogleAdsPage() {
           trendColor={SERIES[1]}
         />
         <StatTile
-          label="Impressions"
+          label={t("m.impressions")}
           value={fmtCompact(s.impressions)}
           sub={fmtInt(s.impressions)}
           icon={Eye}
@@ -311,7 +318,7 @@ function GoogleAdsPage() {
           trendColor={SERIES[3]}
         />
         <StatTile
-          label="Clicks"
+          label={t("m.clicks")}
           value={fmtInt(s.clicks)}
           icon={MousePointerClick}
           delta={prev ? delta(s.clicks, prev.clicks) : null}
@@ -320,9 +327,9 @@ function GoogleAdsPage() {
           trendColor={SERIES[2]}
         />
         <StatTile
-          label="CTR"
+          label={t("m.ctr")}
           value={fmtPct(ctr(s.clicks, s.impressions), 2)}
-          sub="Clicks ÷ impressions"
+          sub={t("h.clicksOverImpressions")}
           delta={
             prev ? delta(ctr(s.clicks, s.impressions), ctr(prev.clicks, prev.impressions)) : null
           }
@@ -331,36 +338,36 @@ function GoogleAdsPage() {
           trendColor={SERIES[4]}
         />
         <StatTile
-          label="Avg CPC"
+          label={t("m.avgCpc")}
           value={s.clicks ? fmtMoney(cpc(s.cost, s.clicks)) : "—"}
           lowerIsBetter
           delta={prev ? delta(cpc(s.cost, s.clicks), cpc(prev.cost, prev.clicks)) : null}
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="Avg CPM"
+          label={t("m.avgCpm")}
           value={fmtMoney(cpm(s.cost, s.impressions))}
-          sub="Per 1,000 impressions"
+          sub={t("h.per1000")}
           lowerIsBetter
           delta={prev ? delta(cpm(s.cost, s.impressions), cpm(prev.cost, prev.impressions)) : null}
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="Conversions"
+          label={t("m.conversions")}
           value={fmtInt(s.conversions)}
           sub={
             s.conversions
-              ? `CPL ${fmtMoney(cpl(s.cost, s.conversions))}`
-              : "Not tracked in the sheet"
+              ? `${t("m.cpl")} ${fmtMoney(cpl(s.cost, s.conversions))}`
+              : t("gads.notTracked")
           }
           icon={Target}
           delta={prev ? delta(s.conversions, prev.conversions) : null}
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="Search impression share"
+          label={t("m.searchImprShare")}
           value={s.searchImpressionSharePct ? fmtPct(s.searchImpressionSharePct, 1) : "—"}
-          sub="Search network, impression-weighted"
+          sub={t("gads.weighted")}
           icon={PhoneCall}
           delta={prev ? delta(s.searchImpressionSharePct, prev.searchImpressionSharePct) : null}
           deltaSuffix={deltaSuffix}
@@ -371,27 +378,28 @@ function GoogleAdsPage() {
 
       {noConversions && (
         <p className="mt-3 border-l-2 border-caution bg-surface px-3 py-2 text-xs text-muted-foreground">
-          The Google Ads tab reports <strong className="text-foreground">0</strong> for both
-          conversions and phone calls across every quarter. That is what the sheet contains, not a
-          rendering fault — conversion tracking is most likely not exported into this workbook.
+          {t("gads.zeroConversions")}
         </p>
       )}
 
-      <SectionRule label="Network split" note="Search vs everything else" />
+      <SectionRule label={t("gads.networkSplit")} note={t("gads.networkSplitHint")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Cost by network and quarter"
-          hint="Stacked, US dollars"
-          legend={NETWORKS.map((n) => ({ label: n, color: CHANNEL_COLOR[n] }))}
-          note="The workbook does not name its campaign rows. Rows reporting a search impression share are treated as Search; the rest are grouped as Display & other."
+          title={t("gads.costByNetwork")}
+          hint={t("h.stackedUsd")}
+          legend={NETWORKS.map((n) => ({
+            label: n === "Search" ? t("gads.search") : t("gads.displayOther"),
+            color: CHANNEL_COLOR[n],
+          }))}
+          note={t("gads.inferredNote")}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "search", header: "Search", numeric: true },
-              { key: "other", header: "Display & other", numeric: true },
-              { key: "total", header: "Total", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "search", header: t("gads.search"), numeric: true },
+              { key: "other", header: t("gads.displayOther"), numeric: true },
+              { key: "total", header: t("common.total"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -400,7 +408,7 @@ function GoogleAdsPage() {
               total: fmtMoney(q.cost),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Google Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("gads.noRows")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -432,14 +440,14 @@ function GoogleAdsPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="Cost share by network"
-          hint={quarter ? quarter.label : "All time"}
+          title={t("gads.costShare")}
+          hint={quarter ? quarter.label : t("common.allTime")}
           legend={costSlices.map((s2) => ({ label: s2.name, color: s2.color }))}
           table={{
             columns: [
-              { key: "network", header: "Network" },
-              { key: "cost", header: "Cost", numeric: true },
-              { key: "share", header: "Share", numeric: true },
+              { key: "network", header: t("m.network") },
+              { key: "cost", header: t("m.cost"), numeric: true },
+              { key: "share", header: t("common.share"), numeric: true },
             ],
             rows: costSlices.map((c) => ({
               network: c.name,
@@ -447,31 +455,31 @@ function GoogleAdsPage() {
               share: fmtPct(s.cost > 0 ? (c.value / s.cost) * 100 : 0, 1),
             })),
           }}
-          empty={costSlices.length ? undefined : "No cost recorded for this period."}
+          empty={costSlices.length ? undefined : t("gads.noCost")}
         >
           <PartToWhole
             data={costSlices}
             format={(v: number) => fmtMoney(v)}
             centerValue={fmtMoney(s.cost)}
-            centerLabel="Total cost"
+            centerLabel={t("m.cost")}
           />
         </ChartFrame>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
         <ChartFrame
-          title="Impressions and clicks"
-          hint="By quarter — two separate marks on one count axis"
+          title={t("gads.imprAndClicks")}
+          hint={t("gads.imprAndClicksHint")}
           legend={[
-            { label: "Impressions", color: SERIES[3] },
-            { label: "Clicks", color: SERIES[2] },
+            { label: t("m.impressions"), color: SERIES[3] },
+            { label: t("m.clicks"), color: SERIES[2] },
           ]}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "impressions", header: "Impressions", numeric: true },
-              { key: "clicks", header: "Clicks", numeric: true },
-              { key: "ctr", header: "CTR", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "impressions", header: t("m.impressions"), numeric: true },
+              { key: "clicks", header: t("m.clicks"), numeric: true },
+              { key: "ctr", header: t("m.ctr"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -480,7 +488,7 @@ function GoogleAdsPage() {
               ctr: fmtPct(q.ctr, 2),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Google Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("gads.noRows")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -495,14 +503,14 @@ function GoogleAdsPage() {
                 <ChartTooltip format={(v) => fmtInt(v)} />
                 <Bar
                   dataKey="impressions"
-                  name="Impressions"
+                  name={t("m.impressions")}
                   fill={SERIES[3]}
                   radius={[3, 3, 0, 0]}
                   maxBarSize={28}
                 />
                 <Bar
                   dataKey="clicks"
-                  name="Clicks"
+                  name={t("m.clicks")}
                   fill={SERIES[2]}
                   radius={[3, 3, 0, 0]}
                   maxBarSize={28}
@@ -513,18 +521,18 @@ function GoogleAdsPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="CTR and search impression share"
-          hint="Both percentages, so they share one axis honestly"
+          title={t("gads.ctrAndShare")}
+          hint={t("gads.ctrAndShareHint")}
           legend={[
-            { label: "CTR", color: SERIES[2] },
-            { label: "Search impression share", color: SERIES[5] },
+            { label: t("m.ctr"), color: SERIES[2] },
+            { label: t("m.searchImprShare"), color: SERIES[5] },
           ]}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "ctr", header: "CTR", numeric: true },
-              { key: "sis", header: "Impr. share", numeric: true },
-              { key: "cpc", header: "Avg CPC", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "ctr", header: t("m.ctr"), numeric: true },
+              { key: "sis", header: t("m.imprShare"), numeric: true },
+              { key: "cpc", header: t("m.avgCpc"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -533,7 +541,7 @@ function GoogleAdsPage() {
               cpc: fmtMoney(q.cpc),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Google Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("gads.noRows")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -545,7 +553,7 @@ function GoogleAdsPage() {
                 <Line
                   type="linear"
                   dataKey="ctr"
-                  name="CTR"
+                  name={t("m.ctr")}
                   stroke={SERIES[2]}
                   strokeWidth={2}
                   dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[2] }}
@@ -553,7 +561,7 @@ function GoogleAdsPage() {
                 <Line
                   type="linear"
                   dataKey="searchImpressionShare"
-                  name="Search impression share"
+                  name={t("m.searchImprShare")}
                   stroke={SERIES[5]}
                   strokeWidth={2}
                   dot={{ r: 4, strokeWidth: 2, stroke: surfaceStroke, fill: SERIES[5] }}
@@ -564,14 +572,14 @@ function GoogleAdsPage() {
         </ChartFrame>
       </div>
 
-      <SectionRule label="Every row" note={`${rows.length} campaign row(s) in view`} />
+      <SectionRule label={t("gads.everyRow")} note={t("gads.rowsInView", { n: rows.length })} />
       <div className="border border-border bg-surface">
         <DataTable columns={rowColumns} rows={rows} initialSort={{ key: "cost", dir: "desc" }} />
       </div>
 
-      <SectionRule label="Advisory" />
+      <SectionRule label={t("common.advisory")} />
       <AiPanel
-        context="Google Ads performance"
+        context={t("gads.aiContext")}
         payload={{
           period: quarter?.label ?? "all time",
           comparedWith: previousQuarter?.label ?? null,

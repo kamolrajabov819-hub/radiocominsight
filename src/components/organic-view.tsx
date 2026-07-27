@@ -19,6 +19,7 @@ import {
   yAxisProps,
 } from "@/components/charts";
 import { useData } from "@/lib/data-context";
+import { useI18n, type Key } from "@/lib/i18n";
 import {
   delta,
   filterByQuarter,
@@ -36,12 +37,12 @@ import { cn } from "@/lib/utils";
  * "Page followers" and "Likes" never matched "Like count".
  */
 export type OrganicSpec = {
-  title: string;
-  subtitle: string;
+  title: Key;
+  subtitle: Key;
   filenameSlug: string;
   network: "facebook" | "instagram";
-  /** Headline tiles, in display order. */
-  headline: { key: string; label: string; compact?: boolean }[];
+  /** Headline tiles, in display order. `label` is a translation key. */
+  headline: { key: string; label: Key; compact?: boolean }[];
   /** Series for the "headline metrics by quarter" chart. */
   trend: string[];
   /** Part-to-whole breakdown of interactions. */
@@ -50,12 +51,13 @@ export type OrganicSpec = {
 
 export function OrganicView({ spec }: { spec: OrganicSpec }) {
   const { data, quarters, quarter, previousQuarter } = useData();
+  const { t, tMetric } = useI18n();
   const all = data[spec.network];
   const scoped = filterByQuarter(all, quarter?.key ?? null);
   const totals = sumOrganic(scoped.length ? scoped : []);
   const prevTotals = previousQuarter ? sumOrganic(filterByQuarter(all, previousQuarter.key)) : null;
   const allKeys = useMemo(() => organicMetricKeys(all), [all]);
-  const deltaSuffix = previousQuarter ? `vs ${previousQuarter.short}` : undefined;
+  const deltaSuffix = previousQuarter ? t("h.vs", { q: previousQuarter.short }) : undefined;
 
   const [explored, setExplored] = useState<string>(spec.trend[0] ?? allKeys[0] ?? "");
 
@@ -72,7 +74,7 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
   );
 
   const mixSlices = spec.interactionMix
-    .map((k, i) => ({ name: k, value: totals[k] ?? 0, color: SERIES[i % SERIES.length] }))
+    .map((k, i) => ({ name: tMetric(k), value: totals[k] ?? 0, color: SERIES[i % SERIES.length] }))
     .filter((d) => d.value > 0);
 
   const trendSeries = spec.trend.filter((k) => allKeys.includes(k));
@@ -81,13 +83,13 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
   const pivotColumns: Column<{ metric: string }>[] = [
     {
       key: "metric",
-      header: "Metric",
+      header: t("common.metric"),
       cell: (r) => (
         <span className={cn(zeroKeys.includes(r.metric) && "text-muted-foreground")}>
-          {r.metric}
+          {tMetric(r.metric)}
           {isSnapshotMetric(r.metric) && (
             <span className="ml-1.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">
-              snapshot
+              {t("common.snapshot")}
             </span>
           )}
         </span>
@@ -105,7 +107,7 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
 
   const sheets = [
     {
-      name: spec.title.slice(0, 30),
+      name: t(spec.title).slice(0, 30),
       rows: [
         ["Metric", ...all.map((p) => p.label)],
         ...allKeys.map((k) => [k, ...all.map((p) => p.metrics[k] ?? 0)] as (string | number)[]),
@@ -115,13 +117,13 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
 
   return (
     <AppShell
-      title={spec.title}
-      subtitle={spec.subtitle}
+      title={t(spec.title)}
+      subtitle={t(spec.subtitle)}
       actions={<ExportButton filename={`radiocom-${spec.filenameSlug}`} sheets={sheets} />}
     >
       <SectionRule
-        label="Headline metrics"
-        note={quarter ? quarter.label : "All quarters combined"}
+        label={t("org.headline")}
+        note={quarter ? quarter.label : t("common.allQuartersCombined")}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -132,9 +134,9 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
             <StatTile
               key={h.key}
               accent={i === 0}
-              label={h.label}
+              label={t(h.label)}
               value={h.compact ? fmtCompact(value) : fmtInt(value)}
-              sub={snapshot ? "Latest reading" : h.compact ? fmtInt(value) : undefined}
+              sub={snapshot ? t("org.latestReading") : h.compact ? fmtInt(value) : undefined}
               delta={prevTotals ? delta(value, prevTotals[h.key]) : null}
               deltaSuffix={deltaSuffix}
               trend={all.map((p) => p.metrics[h.key] ?? 0)}
@@ -144,23 +146,20 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
         })}
       </div>
 
-      <Note>
-        Follower and library counts are point-in-time readings, so the all-time view carries the
-        latest quarter forward rather than adding the quarters together. Everything else is summed.
-      </Note>
+      <Note>{t("org.snapshotNote")}</Note>
 
-      <SectionRule label="Quarterly movement" note="All quarters, regardless of the filter above" />
+      <SectionRule label={t("org.quarterlyMovement")} note={t("common.allQuartersNote")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Headline metrics by quarter"
-          hint="One panel per metric, each on its own scale"
-          note="Media views run three orders of magnitude above engagements, so a shared axis would flatten every series but the largest. Each panel keeps its own scale; the totals sit beside the labels."
+          title={t("org.headlineByQuarter")}
+          hint={t("org.smallMultiplesHint")}
+          note={t("org.smallMultiplesNote")}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              ...trendSeries.map((k) => ({ key: k, header: k, numeric: true })),
+              { key: "label", header: t("common.quarter") },
+              ...trendSeries.map((k) => ({ key: k, header: tMetric(k), numeric: true })),
             ],
             rows: all.map((p) => {
               const row: Record<string, string | number> = { label: p.label };
@@ -170,13 +169,13 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
               return row;
             }),
           }}
-          empty={trendSeries.length ? undefined : "None of the headline metrics exist in this tab."}
+          empty={trendSeries.length ? undefined : t("org.noHeadline")}
         >
           <SmallMultiples
             periods={all.map((p) => p.short)}
             format={(v) => fmtCompact(v)}
             series={trendSeries.map((k, i) => ({
-              name: k,
+              name: tMetric(k),
               color: SERIES[i % SERIES.length],
               values: all.map((p) => p.metrics[k] ?? 0),
             }))}
@@ -184,58 +183,62 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
         </ChartFrame>
 
         <ChartFrame
-          title="Interaction mix"
-          hint={quarter ? quarter.label : "All time"}
+          title={t("org.interactionMix")}
+          hint={quarter ? quarter.label : t("common.allTime")}
           legend={mixSlices.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "metric", header: "Interaction" },
-              { key: "count", header: "Count", numeric: true },
+              { key: "metric", header: t("m.interactions") },
+              { key: "count", header: t("common.count"), numeric: true },
             ],
             rows: mixSlices.map((s) => ({ metric: s.name, count: fmtInt(s.value) })),
           }}
-          empty={mixSlices.length ? undefined : "No interactions recorded for this period."}
+          empty={mixSlices.length ? undefined : t("org.noInteractions")}
         >
           <PartToWhole
             data={mixSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(mixSlices.reduce((a, d) => a + d.value, 0))}
-            centerLabel="Interactions"
+            centerLabel={t("m.interactions")}
           />
         </ChartFrame>
       </div>
 
       <div className="mt-3">
         <ChartFrame
-          title="Metric explorer"
-          hint="Pick any metric in the tab and see it quarter by quarter"
+          title={t("org.explorer")}
+          hint={t("org.explorerHint")}
           actions={
             <select
               value={explored}
               onChange={(e) => setExplored(e.target.value)}
-              aria-label="Metric to explore"
+              aria-label={t("org.explorerLabel")}
               className="max-w-[16rem] border border-border bg-surface px-2 py-1 text-xs"
             >
               {allKeys.map((k) => (
                 <option key={k} value={k}>
-                  {k}
-                  {zeroKeys.includes(k) ? " (all zero)" : ""}
+                  {tMetric(k)}
+                  {zeroKeys.includes(k) ? ` ${t("org.allZero")}` : ""}
                 </option>
               ))}
             </select>
           }
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "value", header: explored || "Value", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              {
+                key: "value",
+                header: explored ? tMetric(explored) : t("common.value"),
+                numeric: true,
+              },
             ],
             rows: all.map((p) => ({ label: p.label, value: fmtInt(p.metrics[explored] ?? 0) })),
           }}
           empty={
             !explored
-              ? "This tab reported no metrics."
+              ? t("org.noMetrics")
               : zeroKeys.includes(explored)
-                ? `"${explored}" is present in the sheet but reports zero for every quarter.`
+                ? t("org.metricAllZero", { m: tMetric(explored) })
                 : undefined
           }
         >
@@ -265,8 +268,10 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
       </div>
 
       <SectionRule
-        label="Every metric"
-        note={`${allKeys.length} metric(s)${zeroKeys.length ? ` · ${zeroKeys.length} report zero throughout` : ""}`}
+        label={t("org.everyMetric")}
+        note={`${t("org.metricCount", { n: allKeys.length })}${
+          zeroKeys.length ? ` · ${t("org.zeroThroughout", { n: zeroKeys.length })}` : ""
+        }`}
       />
       <div className="border border-border bg-surface">
         <DataTable
@@ -277,9 +282,9 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
         />
       </div>
 
-      <SectionRule label="Advisory" />
+      <SectionRule label={t("common.advisory")} />
       <AiPanel
-        context={`${spec.title.toLowerCase()}`}
+        context={t(spec.title).toLowerCase()}
         payload={{
           channel: spec.network,
           period: quarter?.label ?? "all time",

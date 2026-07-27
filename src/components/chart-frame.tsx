@@ -3,6 +3,7 @@ import { BarChart3, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DataTable, type Column } from "./data-table";
 import { EmptyState } from "./panel";
+import { useI18n } from "@/lib/i18n";
 
 export type LegendItem = { label: string; color: string };
 
@@ -41,6 +42,7 @@ export function ChartFrame({
   className?: string;
   actions?: ReactNode;
 }) {
+  const { t } = useI18n();
   const [view, setView] = useState<"chart" | "table">("chart");
   const showTable = Boolean(table) && view === "table";
 
@@ -57,19 +59,19 @@ export function ChartFrame({
             <div
               className="flex border border-border"
               role="group"
-              aria-label="Chart or table view"
+              aria-label={t("common.viewToggle")}
             >
               <ViewButton
                 active={view === "chart"}
                 onClick={() => setView("chart")}
-                label="Chart view"
+                label={t("common.chartView")}
               >
                 <BarChart3 className="h-3.5 w-3.5" />
               </ViewButton>
               <ViewButton
                 active={view === "table"}
                 onClick={() => setView("table")}
-                label="Table view"
+                label={t("common.tableView")}
               >
                 <Table2 className="h-3.5 w-3.5" />
               </ViewButton>

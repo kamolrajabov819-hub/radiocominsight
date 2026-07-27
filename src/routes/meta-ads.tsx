@@ -31,6 +31,7 @@ import {
   yAxisProps,
 } from "@/components/charts";
 import { useData } from "@/lib/data-context";
+import { useI18n } from "@/lib/i18n";
 import {
   cpc,
   cpl,
@@ -66,10 +67,11 @@ export const Route = createFileRoute("/meta-ads")({
 
 function MetaAdsPage() {
   const { data, quarters, quarter, previousQuarter } = useData();
+  const { t } = useI18n();
   const rows = filterByQuarter(data.meta, quarter?.key ?? null);
   const s = sumMeta(rows);
   const prev = previousQuarter ? sumMeta(filterByQuarter(data.meta, previousQuarter.key)) : null;
-  const deltaSuffix = previousQuarter ? `vs ${previousQuarter.short}` : undefined;
+  const deltaSuffix = previousQuarter ? t("h.vs", { q: previousQuarter.short }) : undefined;
 
   const byQuarter = useMemo(
     () =>
@@ -94,11 +96,11 @@ function MetaAdsPage() {
   );
 
   const engagementSlices = [
-    { name: "Leads", value: s.leads, color: SERIES[0] },
-    { name: "Post engagement", value: s.postEngagement, color: SERIES[1] },
-    { name: "Messaging started", value: s.messagingConversations, color: SERIES[2] },
-    { name: "Page likes", value: s.pageLikes, color: SERIES[3] },
-    { name: "Content views", value: s.contentViews, color: SERIES[4] },
+    { name: t("m.leads"), value: s.leads, color: SERIES[0] },
+    { name: t("meta.postEngagement"), value: s.postEngagement, color: SERIES[1] },
+    { name: t("meta.messagingStarted"), value: s.messagingConversations, color: SERIES[2] },
+    { name: t("meta.pageLikes"), value: s.pageLikes, color: SERIES[3] },
+    { name: t("meta.contentViews"), value: s.contentViews, color: SERIES[4] },
   ].filter((d) => d.value > 0);
 
   const watchThrough = [
@@ -110,87 +112,92 @@ function MetaAdsPage() {
   const hasVideo = watchThrough.some((w) => w.value > 0);
 
   const tableColumns: Column<MetaRow>[] = [
-    { key: "period", header: "Period", cell: (r) => r.label, sortValue: (r) => r.quarter },
+    {
+      key: "period",
+      header: t("common.period.label"),
+      cell: (r) => r.label,
+      sortValue: (r) => r.quarter,
+    },
     {
       key: "spend",
-      header: "Spend",
+      header: t("m.spend"),
       numeric: true,
       cell: (r) => fmtMoney(r.spend),
       sortValue: (r) => r.spend,
     },
     {
       key: "impr",
-      header: "Impressions",
+      header: t("m.impressions"),
       numeric: true,
       cell: (r) => fmtInt(r.impressions),
       sortValue: (r) => r.impressions,
     },
     {
       key: "reach",
-      header: "Reach",
+      header: t("m.reach"),
       numeric: true,
       cell: (r) => fmtInt(r.reach),
       sortValue: (r) => r.reach,
     },
     {
       key: "freq",
-      header: "Frequency",
+      header: t("m.frequency"),
       numeric: true,
       cell: (r) => fmtDecimal(frequency(r.impressions, r.reach)),
       sortValue: (r) => frequency(r.impressions, r.reach),
     },
     {
       key: "clicks",
-      header: "Clicks",
+      header: t("m.clicks"),
       numeric: true,
       cell: (r) => fmtInt(r.clicks),
       sortValue: (r) => r.clicks,
     },
     {
       key: "ctr",
-      header: "CTR",
+      header: t("m.ctr"),
       numeric: true,
       cell: (r) => fmtPct(ctr(r.clicks, r.impressions), 3),
       sortValue: (r) => ctr(r.clicks, r.impressions),
     },
     {
       key: "cpc",
-      header: "CPC",
+      header: t("m.cpc"),
       numeric: true,
       cell: (r) => (r.clicks ? fmtMoney(cpc(r.spend, r.clicks)) : "—"),
       sortValue: (r) => cpc(r.spend, r.clicks),
     },
     {
       key: "cpm",
-      header: "CPM",
+      header: t("m.cpm"),
       numeric: true,
       cell: (r) => fmtMoney(cpm(r.spend, r.impressions)),
       sortValue: (r) => cpm(r.spend, r.impressions),
     },
     {
       key: "leads",
-      header: "Leads",
+      header: t("m.leads"),
       numeric: true,
       cell: (r) => fmtInt(r.leads),
       sortValue: (r) => r.leads,
     },
     {
       key: "cpl",
-      header: "CPL",
+      header: t("m.cpl"),
       numeric: true,
       cell: (r) => (r.leads ? fmtMoney(cpl(r.spend, r.leads)) : "—"),
       sortValue: (r) => cpl(r.spend, r.leads),
     },
     {
       key: "eng",
-      header: "Post eng.",
+      header: t("meta.postEng"),
       numeric: true,
       cell: (r) => fmtInt(r.postEngagement),
       sortValue: (r) => r.postEngagement,
     },
     {
       key: "msg",
-      header: "Messages",
+      header: t("meta.messages"),
       numeric: true,
       cell: (r) => fmtInt(r.messagingConversations),
       sortValue: (r) => r.messagingConversations,
@@ -256,19 +263,19 @@ function MetaAdsPage() {
 
   return (
     <AppShell
-      title="Meta Ads"
-      subtitle="Paid — Facebook & Instagram"
+      title={t("meta.title")}
+      subtitle={t("meta.subtitle")}
       actions={<ExportButton filename="radiocom-meta-ads" sheets={sheets} />}
     >
       <SectionRule
-        label="Spend & efficiency"
-        note={quarter ? quarter.label : "All quarters combined"}
+        label={t("meta.spendEfficiency")}
+        note={quarter ? quarter.label : t("common.allQuartersCombined")}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         <StatTile
           accent
-          label="Spend"
+          label={t("m.spend")}
           value={fmtMoney(s.spend)}
           icon={DollarSign}
           delta={prev ? delta(s.spend, prev.spend) : null}
@@ -277,7 +284,7 @@ function MetaAdsPage() {
           trendColor={SERIES[0]}
         />
         <StatTile
-          label="Leads"
+          label={t("m.leads")}
           value={fmtInt(s.leads)}
           icon={Target}
           delta={prev ? delta(s.leads, prev.leads) : null}
@@ -286,9 +293,9 @@ function MetaAdsPage() {
           trendColor={SERIES[1]}
         />
         <StatTile
-          label="Cost per lead"
+          label={t("m.cpl")}
           value={s.leads ? fmtMoney(cpl(s.spend, s.leads)) : "—"}
-          sub="Spend ÷ leads"
+          sub={t("h.spendOverLeads")}
           lowerIsBetter
           delta={prev ? delta(cpl(s.spend, s.leads), cpl(prev.spend, prev.leads)) : null}
           deltaSuffix={deltaSuffix}
@@ -296,7 +303,7 @@ function MetaAdsPage() {
           trendColor={SERIES[2]}
         />
         <StatTile
-          label="Reach"
+          label={t("m.reach")}
           value={fmtCompact(s.reach)}
           sub={fmtInt(s.reach)}
           icon={Users}
@@ -306,7 +313,7 @@ function MetaAdsPage() {
           trendColor={SERIES[3]}
         />
         <StatTile
-          label="Impressions"
+          label={t("m.impressions")}
           value={fmtCompact(s.impressions)}
           sub={fmtInt(s.impressions)}
           icon={Eye}
@@ -316,32 +323,32 @@ function MetaAdsPage() {
           trendColor={SERIES[4]}
         />
         <StatTile
-          label="Clicks"
+          label={t("m.clicks")}
           value={fmtInt(s.clicks)}
           icon={MousePointerClick}
           delta={prev ? delta(s.clicks, prev.clicks) : null}
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="CTR"
+          label={t("m.ctr")}
           value={fmtPct(ctr(s.clicks, s.impressions), 3)}
-          sub="Clicks ÷ impressions"
+          sub={t("h.clicksOverImpressions")}
           delta={
             prev ? delta(ctr(s.clicks, s.impressions), ctr(prev.clicks, prev.impressions)) : null
           }
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="Cost per click"
+          label={t("m.cpc")}
           value={s.clicks ? fmtMoney(cpc(s.spend, s.clicks)) : "—"}
           lowerIsBetter
           delta={prev ? delta(cpc(s.spend, s.clicks), cpc(prev.spend, prev.clicks)) : null}
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="CPM"
+          label={t("m.cpm")}
           value={fmtMoney(cpm(s.spend, s.impressions))}
-          sub="Per 1,000 impressions"
+          sub={t("h.per1000")}
           lowerIsBetter
           delta={
             prev ? delta(cpm(s.spend, s.impressions), cpm(prev.spend, prev.impressions)) : null
@@ -349,9 +356,9 @@ function MetaAdsPage() {
           deltaSuffix={deltaSuffix}
         />
         <StatTile
-          label="Frequency"
+          label={t("m.frequency")}
           value={fmtDecimal(frequency(s.impressions, s.reach))}
-          sub="Impressions ÷ reach"
+          sub={t("h.imprOverReach")}
           icon={Repeat}
           delta={
             prev
@@ -362,26 +369,23 @@ function MetaAdsPage() {
         />
       </div>
 
-      <SectionRule
-        label="Trends"
-        note="Every quarter in the workbook, regardless of the filter above"
-      />
+      <SectionRule label={t("meta.trends")} note={t("common.allQuartersNote")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <ChartFrame
-          title="Spend against leads"
-          hint="Grouped bars, by quarter"
+          title={t("meta.spendVsLeads")}
+          hint={t("meta.spendVsLeadsHint")}
           legend={[
-            { label: "Spend (USD)", color: SERIES[0] },
-            { label: "Leads", color: SERIES[1] },
+            { label: t("m.spend"), color: SERIES[0] },
+            { label: t("m.leads"), color: SERIES[1] },
           ]}
-          note="Two measures on different scales share one axis here because both are small counts; the table view carries the exact figures."
+          note={t("meta.spendVsLeadsNote")}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "spend", header: "Spend", numeric: true },
-              { key: "leads", header: "Leads", numeric: true },
-              { key: "cpl", header: "CPL", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "spend", header: t("m.spend"), numeric: true },
+              { key: "leads", header: t("m.leads"), numeric: true },
+              { key: "cpl", header: t("m.cpl"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -390,7 +394,7 @@ function MetaAdsPage() {
               cpl: q.cpl != null ? fmtMoney(q.cpl) : "—",
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Meta Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("meta.noRows")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -405,14 +409,14 @@ function MetaAdsPage() {
                 <ChartTooltip format={(v, k) => (k === "spend" ? fmtMoney(v) : fmtInt(v))} />
                 <Bar
                   dataKey="spend"
-                  name="Spend (USD)"
+                  name={t("m.spend")}
                   fill={SERIES[0]}
                   radius={[3, 3, 0, 0]}
                   maxBarSize={28}
                 />
                 <Bar
                   dataKey="leads"
-                  name="Leads"
+                  name={t("m.leads")}
                   fill={SERIES[1]}
                   radius={[3, 3, 0, 0]}
                   maxBarSize={28}
@@ -423,14 +427,14 @@ function MetaAdsPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="Cost per lead"
-          hint="US dollars, by quarter — lower is better"
+          title={t("meta.cplTitle")}
+          hint={t("meta.cplHint")}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "cpl", header: "CPL", numeric: true },
-              { key: "cpc", header: "CPC", numeric: true },
-              { key: "cpm", header: "CPM", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "cpl", header: t("m.cpl"), numeric: true },
+              { key: "cpc", header: t("m.cpc"), numeric: true },
+              { key: "cpm", header: t("m.cpm"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -439,7 +443,7 @@ function MetaAdsPage() {
               cpm: fmtMoney(q.cpm),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Meta Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("meta.noRows")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -451,7 +455,7 @@ function MetaAdsPage() {
                 <Line
                   type="linear"
                   dataKey="cpl"
-                  name="Cost per lead"
+                  name={t("m.cpl")}
                   stroke={SERIES[2]}
                   strokeWidth={2}
                   connectNulls={false}
@@ -467,18 +471,18 @@ function MetaAdsPage() {
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Reach against impressions"
-          hint="People reached versus times shown, by quarter"
+          title={t("meta.reachVsImpressions")}
+          hint={t("meta.reachVsImpressionsHint")}
           legend={[
-            { label: "Impressions", color: SERIES[3] },
-            { label: "Reach", color: SERIES[4] },
+            { label: t("m.impressions"), color: SERIES[3] },
+            { label: t("m.reach"), color: SERIES[4] },
           ]}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "impressions", header: "Impressions", numeric: true },
-              { key: "reach", header: "Reach", numeric: true },
-              { key: "frequency", header: "Frequency", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "impressions", header: t("m.impressions"), numeric: true },
+              { key: "reach", header: t("m.reach"), numeric: true },
+              { key: "frequency", header: t("m.frequency"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -487,7 +491,7 @@ function MetaAdsPage() {
               frequency: fmtDecimal(q.frequency),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No Meta Ads rows found in the workbook."}
+          empty={byQuarter.length ? undefined : t("meta.noRows")}
         >
           <div className="h-64">
             <ResponsiveContainer>
@@ -499,7 +503,7 @@ function MetaAdsPage() {
                 <Area
                   type="linear"
                   dataKey="impressions"
-                  name="Impressions"
+                  name={t("m.impressions")}
                   stroke={SERIES[3]}
                   strokeWidth={2}
                   fill={SERIES[3]}
@@ -508,7 +512,7 @@ function MetaAdsPage() {
                 <Area
                   type="linear"
                   dataKey="reach"
-                  name="Reach"
+                  name={t("m.reach")}
                   stroke={SERIES[4]}
                   strokeWidth={2}
                   fill={SERIES[4]}
@@ -520,48 +524,46 @@ function MetaAdsPage() {
         </ChartFrame>
 
         <ChartFrame
-          title="Engagement mix"
-          hint={quarter ? quarter.label : "All time"}
+          title={t("meta.engagementMix")}
+          hint={quarter ? quarter.label : t("common.allTime")}
           legend={engagementSlices.map((d) => ({ label: d.name, color: d.color }))}
           table={{
             columns: [
-              { key: "type", header: "Interaction" },
-              { key: "count", header: "Count", numeric: true },
+              { key: "type", header: t("meta.interaction") },
+              { key: "count", header: t("common.count"), numeric: true },
             ],
             rows: engagementSlices.map((d) => ({ type: d.name, count: fmtInt(d.value) })),
           }}
-          empty={engagementSlices.length ? undefined : "No engagement recorded for this period."}
+          empty={engagementSlices.length ? undefined : t("org.noInteractions")}
         >
           <PartToWhole
             data={engagementSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtCompact(engagementSlices.reduce((a, d) => a + d.value, 0))}
-            centerLabel="Interactions"
+            centerLabel={t("m.interactions")}
           />
         </ChartFrame>
       </div>
 
       <div className="mt-3">
         <ChartFrame
-          title="Video watch-through"
-          hint="Viewers reaching each quartile"
-          note="Quartiles are an ordered scale, so they use the sequential ramp instead of category colours."
+          title={t("meta.watchThrough")}
+          hint={t("meta.watchThroughHint")}
+          note={t("meta.watchThroughNote")}
           table={{
             columns: [
-              { key: "stage", header: "Quartile" },
-              { key: "views", header: "Views", numeric: true },
+              { key: "stage", header: t("meta.quartile") },
+              { key: "views", header: t("olx.views"), numeric: true },
             ],
             rows: watchThrough.map((w) => ({ stage: w.label, views: fmtInt(w.value) })),
           }}
-          empty={
-            hasVideo ? undefined : "The Meta Ads tab reports zero video watches for this period."
-          }
+          empty={hasVideo ? undefined : t("meta.noVideo")}
         >
           <StageBars data={watchThrough} format={(v) => fmtInt(v)} height={220} />
         </ChartFrame>
       </div>
 
-      <SectionRule label="Full detail" note={`${rows.length} row(s)`} />
+      <SectionRule label={t("meta.fullDetail")} note={t("common.rows", { n: rows.length })} />
       <div className="border border-border bg-surface">
         <DataTable
           columns={tableColumns}
@@ -570,9 +572,9 @@ function MetaAdsPage() {
         />
       </div>
 
-      <SectionRule label="Advisory" />
+      <SectionRule label={t("common.advisory")} />
       <AiPanel
-        context="Meta Ads paid performance"
+        context={t("meta.aiContext")}
         payload={{
           period: quarter?.label ?? "all time",
           comparedWith: previousQuarter?.label ?? null,

@@ -31,6 +31,7 @@ import {
   yAxisProps,
 } from "@/components/charts";
 import { useData } from "@/lib/data-context";
+import { useI18n } from "@/lib/i18n";
 import {
   cpc,
   cpl,
@@ -69,6 +70,7 @@ const CHANNELS = ["Meta Ads", "Google Ads", "OLX"] as const;
 
 function Overview() {
   const { data, quarters, quarter, previousQuarter } = useData();
+  const { t } = useI18n();
 
   /** Channel roll-up for an arbitrary quarter (null = all time). */
   const rollup = useMemo(() => {
@@ -122,7 +124,7 @@ function Overview() {
   const now = rollup(quarter?.key ?? null);
   const prev = previousQuarter ? rollup(previousQuarter.key) : null;
   const blendedCpl = cpl(now.spend, now.conversions);
-  const deltaSuffix = previousQuarter ? `vs ${previousQuarter.short}` : undefined;
+  const deltaSuffix = previousQuarter ? t("h.vs", { q: previousQuarter.short }) : undefined;
 
   /** Per-quarter series drive both the trend charts and the sparklines. */
   const byQuarter = useMemo(
@@ -164,9 +166,9 @@ function Overview() {
   const worstCtr = [...engaged].sort((a, b) => a.ctr - b.ctr)[0];
 
   const funnel = [
-    { label: "Impressions", value: now.impressions },
-    { label: "Clicks", value: now.clicks },
-    { label: "Leads", value: now.conversions },
+    { label: t("m.impressions"), value: now.impressions },
+    { label: t("m.clicks"), value: now.clicks },
+    { label: t("m.leads"), value: now.conversions },
   ];
 
   const exportSheets = [
@@ -233,19 +235,19 @@ function Overview() {
 
   return (
     <AppShell
-      title="Cross-channel"
-      subtitle="Meta · Google · OLX"
+      title={t("ov.title")}
+      subtitle={t("ov.subtitle")}
       actions={<ExportButton filename="radiocom-cross-channel" sheets={exportSheets} />}
     >
       <SectionRule
-        label="Blended performance"
-        note={quarter ? quarter.label : "All quarters combined"}
+        label={t("ov.blended")}
+        note={quarter ? quarter.label : t("common.allQuartersCombined")}
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatTile
           accent
-          label="Total spend"
+          label={t("m.totalSpend")}
           value={fmtMoney(now.spend)}
           icon={DollarSign}
           delta={prev ? delta(now.spend, prev.spend) : null}
@@ -254,9 +256,9 @@ function Overview() {
           trendColor={SERIES[0]}
         />
         <StatTile
-          label="Leads & conversions"
+          label={t("m.leadsConversions")}
           value={fmtInt(now.conversions)}
-          sub={now.includeOlx ? "incl. OLX phone clicks" : "Meta leads + Google conv."}
+          sub={now.includeOlx ? t("ov.inclOlx") : t("ov.metaGoogleConv")}
           icon={Target}
           delta={prev ? delta(now.conversions, prev.conversions) : null}
           deltaSuffix={deltaSuffix}
@@ -264,9 +266,9 @@ function Overview() {
           trendColor={SERIES[1]}
         />
         <StatTile
-          label="Blended CPL"
+          label={t("m.blendedCpl")}
           value={blendedCpl > 0 ? fmtMoney(blendedCpl) : "—"}
-          sub="Spend ÷ conversions"
+          sub={t("h.spendOverImpressions")}
           icon={TrendingDown}
           lowerIsBetter
           delta={prev ? delta(blendedCpl, cpl(prev.spend, prev.conversions)) : null}
@@ -275,7 +277,7 @@ function Overview() {
           trendColor={SERIES[2]}
         />
         <StatTile
-          label="Impressions"
+          label={t("m.impressions")}
           value={fmtCompact(now.impressions)}
           sub={fmtInt(now.impressions)}
           icon={Eye}
@@ -285,9 +287,9 @@ function Overview() {
           trendColor={SERIES[3]}
         />
         <StatTile
-          label="Clicks"
+          label={t("m.clicks")}
           value={fmtInt(now.clicks)}
-          sub={`CTR ${fmtPct(ctr(now.clicks, now.impressions), 3)}`}
+          sub={`${t("m.ctr")} ${fmtPct(ctr(now.clicks, now.impressions), 3)}`}
           icon={MousePointerClick}
           delta={prev ? delta(now.clicks, prev.clicks) : null}
           deltaSuffix={deltaSuffix}
@@ -296,23 +298,23 @@ function Overview() {
         />
       </div>
 
-      <SectionRule label="Where the money goes" />
+      <SectionRule label={t("ov.whereMoneyGoes")} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
           className="xl:col-span-2"
-          title="Paid spend by channel and quarter"
-          hint="Stacked, US dollars"
+          title={t("ov.spendByChannel")}
+          hint={t("h.stackedUsd")}
           legend={[
             { label: "Meta Ads", color: CHANNEL_COLOR["Meta Ads"] },
             { label: "Google Ads", color: CHANNEL_COLOR["Google Ads"] },
           ]}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "meta", header: "Meta Ads", numeric: true },
-              { key: "google", header: "Google Ads", numeric: true },
-              { key: "total", header: "Total", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "meta", header: t("nav.metaAds"), numeric: true },
+              { key: "google", header: t("nav.googleAds"), numeric: true },
+              { key: "total", header: t("common.total"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -321,7 +323,7 @@ function Overview() {
               total: fmtMoney(q["Meta Ads"] + q["Google Ads"]),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No paid spend found in the workbook."}
+          empty={byQuarter.length ? undefined : t("ov.noPaidSpend")}
         >
           <div className="h-72">
             <ResponsiveContainer>
@@ -353,14 +355,14 @@ function Overview() {
         </ChartFrame>
 
         <ChartFrame
-          title="Spend share"
-          hint={quarter ? quarter.label : "All time"}
+          title={t("ov.spendShare")}
+          hint={quarter ? quarter.label : t("common.allTime")}
           legend={spendSlices.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "channel", header: "Channel" },
-              { key: "spend", header: "Spend", numeric: true },
-              { key: "share", header: "Share", numeric: true },
+              { key: "channel", header: t("common.channel") },
+              { key: "spend", header: t("m.spend"), numeric: true },
+              { key: "share", header: t("common.share"), numeric: true },
             ],
             rows: spendSlices.map((s) => ({
               channel: s.name,
@@ -368,27 +370,27 @@ function Overview() {
               share: fmtPct(now.spend > 0 ? (s.value / now.spend) * 100 : 0, 1),
             })),
           }}
-          empty={spendSlices.length ? undefined : "No spend recorded for this period."}
+          empty={spendSlices.length ? undefined : t("ov.noSpend")}
         >
           <PartToWhole
             data={spendSlices}
             format={(v) => fmtMoney(v)}
             centerValue={fmtMoney(now.spend)}
-            centerLabel="Total spend"
+            centerLabel={t("m.totalSpend")}
           />
         </ChartFrame>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
         <ChartFrame
-          title="Conversion share"
-          hint="Leads, conversions and phone clicks"
+          title={t("ov.conversionShare")}
+          hint={t("ov.conversionShareHint")}
           legend={leadSlices.map((s) => ({ label: s.name, color: s.color }))}
           table={{
             columns: [
-              { key: "channel", header: "Channel" },
-              { key: "conv", header: "Conversions", numeric: true },
-              { key: "share", header: "Share", numeric: true },
+              { key: "channel", header: t("common.channel") },
+              { key: "conv", header: t("m.conversions"), numeric: true },
+              { key: "share", header: t("common.share"), numeric: true },
             ],
             rows: leadSlices.map((s) => ({
               channel: s.name,
@@ -396,25 +398,25 @@ function Overview() {
               share: fmtPct(now.conversions > 0 ? (s.value / now.conversions) * 100 : 0, 1),
             })),
           }}
-          empty={leadSlices.length ? undefined : "No conversions recorded for this period."}
+          empty={leadSlices.length ? undefined : t("ov.noConversions")}
         >
           <PartToWhole
             data={leadSlices}
             format={(v) => fmtInt(v)}
             centerValue={fmtInt(now.conversions)}
-            centerLabel="Conversions"
+            centerLabel={t("m.conversions")}
           />
         </ChartFrame>
 
         <ChartFrame
-          title="Blended cost per lead"
-          hint="US dollars, by quarter"
+          title={t("ov.blendedCplTitle")}
+          hint={t("h.usdByQuarter")}
           table={{
             columns: [
-              { key: "label", header: "Quarter" },
-              { key: "cpl", header: "Blended CPL", numeric: true },
-              { key: "spend", header: "Spend", numeric: true },
-              { key: "leads", header: "Conversions", numeric: true },
+              { key: "label", header: t("common.quarter") },
+              { key: "cpl", header: t("m.blendedCpl"), numeric: true },
+              { key: "spend", header: t("m.spend"), numeric: true },
+              { key: "leads", header: t("m.conversions"), numeric: true },
             ],
             rows: byQuarter.map((q) => ({
               label: q.label,
@@ -423,7 +425,7 @@ function Overview() {
               leads: fmtInt(q.leads),
             })),
           }}
-          empty={byQuarter.length ? undefined : "No quarters detected."}
+          empty={byQuarter.length ? undefined : t("ov.noQuarters")}
         >
           <div className="h-60">
             <ResponsiveContainer>
@@ -435,7 +437,7 @@ function Overview() {
                 <Line
                   type="linear"
                   dataKey="cpl"
-                  name="Blended CPL"
+                  name={t("m.blendedCpl")}
                   stroke={SERIES[0]}
                   strokeWidth={2}
                   connectNulls={false}
@@ -448,14 +450,14 @@ function Overview() {
         </ChartFrame>
 
         <ChartFrame
-          title="Funnel"
-          hint={quarter ? quarter.label : "All time"}
-          note="Stages span three orders of magnitude, so each gets its own track with the step conversion beside it."
+          title={t("ov.funnel")}
+          hint={quarter ? quarter.label : t("common.allTime")}
+          note={t("ov.funnelNote")}
           table={{
             columns: [
-              { key: "stage", header: "Stage" },
-              { key: "value", header: "Count", numeric: true },
-              { key: "rate", header: "From previous", numeric: true },
+              { key: "stage", header: t("common.stage") },
+              { key: "value", header: t("common.count"), numeric: true },
+              { key: "rate", header: t("ov.fromPrevious"), numeric: true },
             ],
             rows: funnel.map((f, i) => ({
               stage: f.label,
@@ -466,31 +468,27 @@ function Overview() {
                   : fmtPct((f.value / funnel[i - 1].value) * 100, 3),
             })),
           }}
-          empty={now.impressions ? undefined : "No impressions recorded for this period."}
+          empty={now.impressions ? undefined : t("ov.noImpressions")}
         >
           <FunnelSteps data={funnel} format={(v) => fmtInt(v)} />
         </ChartFrame>
       </div>
 
-      <SectionRule label="Channel league table" />
+      <SectionRule label={t("ov.leagueTable")} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <ChartFrame
-          title="Cost per lead by channel"
-          hint="Lower is better · paid channels only"
+          title={t("ov.cplByChannel")}
+          hint={t("ov.cplByChannelHint")}
           table={{
             columns: [
-              { key: "channel", header: "Channel" },
-              { key: "cpl", header: "CPL", numeric: true },
+              { key: "channel", header: t("common.channel") },
+              { key: "cpl", header: t("m.cpl"), numeric: true },
             ],
             rows: paid.map((c) => ({ channel: c.name, cpl: fmtMoney(c.cpl) })),
           }}
-          empty={paid.length ? undefined : "No channel reported both spend and conversions."}
-          note={
-            paid.length === 1
-              ? "Only one channel reports both spend and conversions, so there is nothing to rank — the figure is shown on its own."
-              : undefined
-          }
+          empty={paid.length ? undefined : t("ov.noRankable")}
+          note={paid.length === 1 ? t("ov.cplSingleNote") : undefined}
         >
           {paid.length === 1 ? (
             // A one-bar bar chart is just a number wearing a costume.
@@ -498,8 +496,11 @@ function Overview() {
               <div className="figure text-4xl leading-none">{fmtMoney(paid[0].cpl)}</div>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="h-2.5 w-2.5" style={{ background: paid[0].color }} aria-hidden />
-                {paid[0].name} · {fmtInt(paid[0].conversions)} conversions from{" "}
-                {fmtMoney(paid[0].spend)}
+                {paid[0].name} ·{" "}
+                {t("ov.conversionsFrom", {
+                  n: fmtInt(paid[0].conversions),
+                  spend: fmtMoney(paid[0].spend),
+                })}
               </div>
             </div>
           ) : (
@@ -508,7 +509,7 @@ function Overview() {
                 .sort((a, b) => b.cpl - a.cpl)
                 .map((c) => ({ label: c.name, value: c.cpl }))}
               color={SERIES[0]}
-              seriesName="CPL"
+              seriesName={t("m.cpl")}
               format={(v) => fmtMoney(v)}
               labelWidth={92}
             />
@@ -516,13 +517,13 @@ function Overview() {
         </ChartFrame>
 
         <ChartFrame
-          title="Click-through rate by channel"
-          hint="Clicks ÷ impressions"
+          title={t("ov.ctrByChannel")}
+          hint={t("h.clicksOverImpressions")}
           table={{
             columns: [
-              { key: "channel", header: "Channel" },
-              { key: "ctr", header: "CTR", numeric: true },
-              { key: "clicks", header: "Clicks", numeric: true },
+              { key: "channel", header: t("common.channel") },
+              { key: "ctr", header: t("m.ctr"), numeric: true },
+              { key: "clicks", header: t("m.clicks"), numeric: true },
             ],
             rows: engaged.map((c) => ({
               channel: c.name,
@@ -530,61 +531,64 @@ function Overview() {
               clicks: fmtInt(c.clicks),
             })),
           }}
-          empty={engaged.length ? undefined : "No impressions recorded for this period."}
+          empty={engaged.length ? undefined : t("ov.noImpressions")}
         >
           <HBarRanking
             data={[...engaged]
               .sort((a, b) => b.ctr - a.ctr)
               .map((c) => ({ label: c.name, value: c.ctr }))}
             color={SERIES[1]}
-            seriesName="CTR"
+            seriesName={t("m.ctr")}
             format={(v) => `${v.toFixed(2)}%`}
             labelWidth={92}
           />
         </ChartFrame>
 
         <Panel>
-          <PanelHeader title="Read-outs" hint="Best and worst on the two efficiency measures." />
+          <PanelHeader title={t("ov.readouts")} hint={t("ov.readoutsHint")} />
           <ul className="mt-3">
             {cheapest && (
               <StatRow
-                label="Cheapest CPL"
+                label={t("ov.cheapestCpl")}
                 value={`${cheapest.name} · ${fmtMoney(cheapest.cpl)}`}
                 swatch={cheapest.color}
               />
             )}
             {dearest && dearest !== cheapest && (
               <StatRow
-                label="Dearest CPL"
+                label={t("ov.dearestCpl")}
                 value={`${dearest.name} · ${fmtMoney(dearest.cpl)}`}
                 swatch={dearest.color}
               />
             )}
             {bestCtr && (
               <StatRow
-                label="Highest CTR"
+                label={t("ov.highestCtr")}
                 value={`${bestCtr.name} · ${fmtPct(bestCtr.ctr, 3)}`}
                 swatch={bestCtr.color}
               />
             )}
             {worstCtr && worstCtr !== bestCtr && (
               <StatRow
-                label="Lowest CTR"
+                label={t("ov.lowestCtr")}
                 value={`${worstCtr.name} · ${fmtPct(worstCtr.ctr, 3)}`}
                 swatch={worstCtr.color}
               />
             )}
-            <StatRow label="Blended CPC" value={fmtDecimal(cpc(now.spend, now.clicks), 4)} />
+            <StatRow label={t("ov.blendedCpc")} value={fmtDecimal(cpc(now.spend, now.clicks), 4)} />
             <StatRow
-              label="Channels reporting"
-              value={`${now.channels.filter((c) => c.impressions > 0 || c.spend > 0).length} of ${CHANNELS.length}`}
+              label={t("ov.channelsReporting")}
+              value={t("common.nOfTotal", {
+                n: now.channels.filter((c) => c.impressions > 0 || c.spend > 0).length,
+                total: CHANNELS.length,
+              })}
             />
           </ul>
         </Panel>
       </div>
 
-      <SectionRule label="Advisory" />
-      <AiPanel payload={aiPayload} context="the blended cross-channel view" />
+      <SectionRule label={t("common.advisory")} />
+      <AiPanel payload={aiPayload} context={t("ov.aiContext")} />
     </AppShell>
   );
 }

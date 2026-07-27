@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export type Column<T> = {
   key: string;
@@ -26,7 +27,7 @@ export function DataTable<T>({
   initialSort,
   maxHeight = "28rem",
   footer,
-  emptyLabel = "No rows for this period.",
+  emptyLabel,
   dense = false,
 }: {
   columns: Column<T>[];
@@ -37,6 +38,7 @@ export function DataTable<T>({
   emptyLabel?: string;
   dense?: boolean;
 }) {
+  const { t } = useI18n();
   const [sort, setSort] = useState(initialSort ?? null);
 
   const sorted = useMemo(() => {
@@ -56,7 +58,11 @@ export function DataTable<T>({
   }, [rows, sort, columns]);
 
   if (!rows.length) {
-    return <div className="px-4 py-8 text-center text-xs text-muted-foreground">{emptyLabel}</div>;
+    return (
+      <div className="px-4 py-8 text-center text-xs text-muted-foreground">
+        {emptyLabel ?? t("common.noRows")}
+      </div>
+    );
   }
 
   const pad = dense ? "px-2.5 py-1.5" : "px-3 py-2";

@@ -17,31 +17,32 @@ import { GlobalFilter } from "./global-filter";
 import { RadiocomLogo, RadiocomMark } from "./brand";
 import { ThemeToggle } from "./theme";
 import { useData } from "@/lib/data-context";
+import { LanguageToggle, useI18n, type Key } from "@/lib/i18n";
 
-const NAV: { group: string; items: { to: string; label: string; icon: typeof Target }[] }[] = [
+const NAV: { group: Key; items: { to: string; label: Key; icon: typeof Target }[] }[] = [
   {
-    group: "Overview",
-    items: [{ to: "/", label: "Cross-channel", icon: LayoutDashboard }],
+    group: "nav.overview",
+    items: [{ to: "/", label: "nav.crossChannel", icon: LayoutDashboard }],
   },
   {
-    group: "Paid",
+    group: "nav.paid",
     items: [
-      { to: "/meta-ads", label: "Meta Ads", icon: Target },
-      { to: "/google-ads", label: "Google Ads", icon: BarChart3 },
+      { to: "/meta-ads", label: "nav.metaAds", icon: Target },
+      { to: "/google-ads", label: "nav.googleAds", icon: BarChart3 },
     ],
   },
   {
-    group: "Organic",
+    group: "nav.organic",
     items: [
-      { to: "/facebook", label: "Facebook", icon: Facebook },
-      { to: "/instagram", label: "Instagram", icon: Instagram },
+      { to: "/facebook", label: "nav.facebook", icon: Facebook },
+      { to: "/instagram", label: "nav.instagram", icon: Instagram },
     ],
   },
   {
-    group: "Search & marketplace",
+    group: "nav.searchMarketplace",
     items: [
-      { to: "/google-analytics", label: "Analytics & SEO", icon: Globe2 },
-      { to: "/olx", label: "OLX listings", icon: ShoppingBag },
+      { to: "/google-analytics", label: "nav.analyticsSeo", icon: Globe2 },
+      { to: "/olx", label: "nav.olx", icon: ShoppingBag },
     ],
   },
 ];
@@ -53,11 +54,12 @@ const NAV: { group: string; items: { to: string; label: string; icon: typeof Tar
  * first render fails hydration.
  */
 function SyncedAt({ iso }: { iso: string }) {
+  const { t } = useI18n();
   const [local, setLocal] = useState<string | null>(null);
   useEffect(() => {
     setLocal(new Date(iso).toLocaleString(undefined, { hour12: false }));
   }, [iso]);
-  if (!local) return <span className="tnum">just now</span>;
+  if (!local) return <span className="tnum">{t("shell.syncedJustNow")}</span>;
   return <span className="tnum">{local}</span>;
 }
 
@@ -77,6 +79,7 @@ export function AppShell({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { sourceError, quarter, fetchedAt } = useData();
+  const { t } = useI18n();
   const [navOpen, setNavOpen] = useState(false);
 
   return (
@@ -94,7 +97,7 @@ export function AppShell({
             type="button"
             onClick={() => setNavOpen(false)}
             className="text-muted-foreground md:hidden"
-            aria-label="Close navigation"
+            aria-label={t("nav.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -103,7 +106,7 @@ export function AppShell({
         <nav className="flex-1 overflow-y-auto p-3">
           {NAV.map((section) => (
             <div key={section.group} className="mb-4 last:mb-0">
-              <div className="eyebrow px-2 pb-1.5">{section.group}</div>
+              <div className="eyebrow px-2 pb-1.5">{t(section.group)}</div>
               <ul>
                 {section.items.map((item) => {
                   const active = pathname === item.to;
@@ -121,7 +124,7 @@ export function AppShell({
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                        {item.label}
+                        {t(item.label)}
                       </Link>
                     </li>
                   );
@@ -132,15 +135,15 @@ export function AppShell({
         </nav>
 
         <div className="border-t border-border px-4 py-3">
-          <div className="eyebrow">Source</div>
+          <div className="eyebrow">{t("shell.source")}</div>
           <p className="mt-1 text-[0.6875rem] leading-relaxed text-muted-foreground">
-            Google Sheet · <span className="tnum">Insights Overall</span>
+            {t("shell.workbook")} · <span className="tnum">Insights Overall</span>
             <br />
             {sourceError ? (
-              <span className="text-negative">Sync failed</span>
+              <span className="text-negative">{t("shell.syncFailed")}</span>
             ) : (
               <>
-                Synced <SyncedAt iso={fetchedAt} />
+                {t("shell.synced")} <SyncedAt iso={fetchedAt} />
               </>
             )}
           </p>
@@ -150,7 +153,7 @@ export function AppShell({
       {navOpen && (
         <button
           type="button"
-          aria-label="Close navigation"
+          aria-label={t("nav.close")}
           className="fixed inset-0 z-30 bg-foreground/20 md:hidden"
           onClick={() => setNavOpen(false)}
         />
@@ -165,7 +168,7 @@ export function AppShell({
                 type="button"
                 onClick={() => setNavOpen(true)}
                 className="text-muted-foreground md:hidden"
-                aria-label="Open navigation"
+                aria-label={t("nav.open")}
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -179,14 +182,15 @@ export function AppShell({
                   {showFilter
                     ? quarter
                       ? quarter.label
-                      : "All time, blended"
-                    : "Not reported by quarter"}
+                      : t("shell.allTimeBlended")
+                    : t("shell.notQuarterly")}
                 </p>
               </div>
             </div>
             <div className="flex min-w-0 items-center gap-2">
               {showFilter && <GlobalFilter />}
               {actions}
+              <LanguageToggle />
               <ThemeToggle />
             </div>
           </div>
@@ -196,7 +200,7 @@ export function AppShell({
           <div className="flex items-start gap-2.5 border-b border-border bg-accent px-4 py-2.5 text-xs text-accent-foreground sm:px-6">
             <AlertTriangle className="mt-px h-4 w-4 shrink-0" aria-hidden />
             <p>
-              <strong className="font-semibold">Live data unavailable.</strong> {sourceError}
+              <strong className="font-semibold">{t("shell.dataUnavailable")}</strong> {sourceError}
             </p>
           </div>
         )}
@@ -204,8 +208,7 @@ export function AppShell({
         <main className="flex-1 px-4 py-5 sm:px-6">{children}</main>
 
         <footer className="border-t border-border px-4 py-4 text-[0.6875rem] text-muted-foreground sm:px-6">
-          Radiocom Insight · figures read live from the Insights Overall workbook. Quarters are
-          derived from each row's start date, so all channels line up on the same calendar.
+          {t("shell.footer")}
         </footer>
       </div>
     </div>

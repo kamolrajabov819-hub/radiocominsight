@@ -6,12 +6,14 @@ import { Sparkles } from "lucide-react";
 import { analyzeInsights } from "@/lib/ai.functions";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader } from "./panel";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Sends the current, filtered view to the strategy model. `payload` is
  * serialised by the caller so the model sees exactly what is on screen.
  */
 export function AiPanel({ payload, context }: { payload: unknown; context: string }) {
+  const { t } = useI18n();
   const run = useServerFn(analyzeInsights);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,13 +33,13 @@ export function AiPanel({ payload, context }: { payload: unknown; context: strin
         title={
           <span className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-            AI strategy read
+            {t("ai.title")}
           </span>
         }
-        hint={`Analyses ${context} exactly as filtered above.`}
+        hint={t("ai.hint", { context })}
         actions={
           <Button size="sm" variant="outline" onClick={() => gen.mutate()} disabled={gen.isPending}>
-            {gen.isPending ? "Analysing…" : text ? "Regenerate" : "Analyse this view"}
+            {gen.isPending ? t("ai.running") : text ? t("ai.rerun") : t("ai.run")}
           </Button>
         }
       />
@@ -53,12 +55,7 @@ export function AiPanel({ payload, context }: { payload: unknown; context: strin
           <ReactMarkdown>{text}</ReactMarkdown>
         </div>
       ) : (
-        !error && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Generates an executive summary and two recommendations from the numbers currently on
-            screen.
-          </p>
-        )
+        !error && <p className="mt-3 text-sm text-muted-foreground">{t("ai.placeholder")}</p>
       )}
     </Panel>
   );
