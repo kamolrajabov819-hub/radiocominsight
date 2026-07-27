@@ -8,7 +8,6 @@ import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
-import { AiPanel } from "@/components/ai-panel";
 import {
   CHANNEL_COLOR,
   ChartTooltip,
@@ -576,25 +575,6 @@ function GoogleAdsPage() {
       <div className="border border-border bg-surface">
         <DataTable columns={rowColumns} rows={rows} initialSort={{ key: "cost", dir: "desc" }} />
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel
-        context={t("gads.aiContext")}
-        payload={{
-          period: quarter?.label ?? "all time",
-          comparedWith: previousQuarter?.label ?? null,
-          totals: {
-            ...s,
-            ctrPct: ctr(s.clicks, s.impressions),
-            cpc: cpc(s.cost, s.clicks),
-            cpm: cpm(s.cost, s.impressions),
-          },
-          previousTotals: prev,
-          byNetwork: networkTotals.map(({ color: _c, ...t }) => t),
-          byQuarter,
-          note: "Conversions and phone calls are reported as zero in the source workbook.",
-        }}
-      />
     </AppShell>
   );
 }

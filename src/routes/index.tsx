@@ -16,7 +16,6 @@ import { StatTile, StatRow } from "@/components/stat";
 import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { Panel, PanelHeader, SectionRule } from "@/components/panel";
-import { AiPanel } from "@/components/ai-panel";
 import {
   CHANNEL_COLOR,
   ChartTooltip,
@@ -206,32 +205,6 @@ function Overview() {
       ],
     },
   ];
-
-  const aiPayload = {
-    period: quarter?.label ?? "all time",
-    comparedWith: previousQuarter?.label ?? null,
-    blended: {
-      spend: now.spend,
-      leads: now.conversions,
-      impressions: now.impressions,
-      clicks: now.clicks,
-      cpl: blendedCpl,
-      ctrPct: ctr(now.clicks, now.impressions),
-      cpc: cpc(now.spend, now.clicks),
-    },
-    previousBlended: prev
-      ? { spend: prev.spend, leads: prev.conversions, cpl: cpl(prev.spend, prev.conversions) }
-      : null,
-    channels: now.channels.map(({ color: _color, ...c }) => c),
-    quarterlyTrend: byQuarter,
-    organicSnapshot: {
-      facebookPeriods: data.facebook.length,
-      instagramPeriods: data.instagram.length,
-    },
-    seo: data.ga.metrics
-      .filter((m) => m.value !== null)
-      .map((m) => ({ metric: m.metric, value: m.raw, change: m.changeRaw })),
-  };
 
   return (
     <AppShell
@@ -586,9 +559,6 @@ function Overview() {
           </ul>
         </Panel>
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel payload={aiPayload} context={t("ov.aiContext")} />
     </AppShell>
   );
 }

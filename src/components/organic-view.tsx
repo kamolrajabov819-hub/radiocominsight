@@ -6,7 +6,6 @@ import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule, Note } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
-import { AiPanel } from "@/components/ai-panel";
 import {
   ChartTooltip,
   Grid,
@@ -281,20 +280,6 @@ export function OrganicView({ spec }: { spec: OrganicSpec }) {
           initialSort={{ key: "metric", dir: "asc" }}
         />
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel
-        context={t(spec.title).toLowerCase()}
-        payload={{
-          channel: spec.network,
-          period: quarter?.label ?? "all time",
-          comparedWith: previousQuarter?.label ?? null,
-          totals,
-          previousTotals: prevTotals,
-          byQuarter: all.map((p) => ({ quarter: p.label, ...p.metrics })),
-          metricsReportingZeroThroughout: zeroKeys,
-        }}
-      />
     </AppShell>
   );
 }

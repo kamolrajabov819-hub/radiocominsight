@@ -7,7 +7,6 @@ import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule, Note } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
-import { AiPanel } from "@/components/ai-panel";
 import { HBarRanking, PartToWhole, SERIES } from "@/components/charts";
 import { useData } from "@/lib/data-context";
 import { useI18n, type Translate } from "@/lib/i18n";
@@ -527,36 +526,6 @@ function GAPage() {
       <div className="border border-border bg-surface">
         <DataTable columns={metricColumns} rows={metrics} maxHeight="26rem" />
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel
-        context={t("ga.aiContext")}
-        payload={{
-          siteMetrics: metrics.map((m) => ({
-            source: m.source,
-            metric: m.metric,
-            value: m.raw,
-            change: m.changeRaw,
-          })),
-          keywordSummary: {
-            tracked: keywords.length,
-            inTopTen,
-            averagePosition: avgPosition,
-            combinedVolume: keywords.reduce((a, k) => a + k.volume, 0),
-          },
-          topKeywords: keywords
-            .slice()
-            .sort((a, b) => b.volume - a.volume)
-            .slice(0, 15)
-            .map((k) => ({
-              keyword: k.keyword,
-              position: k.position,
-              volume: k.volume,
-              difficulty: k.kd,
-              trafficSharePct: k.trafficSharePct,
-            })),
-        }}
-      />
     </AppShell>
   );
 }

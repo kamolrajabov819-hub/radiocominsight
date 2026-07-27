@@ -101,7 +101,6 @@ const en = {
   "common.stage": "Stage",
   "common.allQuartersCombined": "All quarters combined",
   "common.allQuartersNote": "All quarters, regardless of the filter above",
-  "common.advisory": "Advisory",
   "common.snapshot": "snapshot",
   "common.rows": "{n} row(s)",
   "common.ofPrevious": "{v} of previous",
@@ -181,8 +180,6 @@ const en = {
   "ov.noPaidSpend": "No paid spend found in the workbook.",
   "ov.noQuarters": "No quarters detected.",
   "ov.noRankable": "No channel reported both spend and conversions.",
-  "ov.aiContext": "the blended cross-channel view",
-
   /* --- meta ads --- */
   "meta.title": "Meta Ads",
   "meta.subtitle": "Paid — Facebook & Instagram",
@@ -212,8 +209,6 @@ const en = {
   "meta.fullDetail": "Full detail",
   "meta.postEng": "Post eng.",
   "meta.messages": "Messages",
-  "meta.aiContext": "Meta Ads paid performance",
-
   /* --- google ads --- */
   "gads.title": "Google Ads",
   "gads.subtitle": "Search, display and video",
@@ -238,8 +233,6 @@ const en = {
   "gads.rowsInView": "{n} campaign row(s) in view",
   "gads.noRows": "No Google Ads rows found in the workbook.",
   "gads.noCost": "No cost recorded for this period.",
-  "gads.aiContext": "Google Ads performance",
-
   /* --- analytics & seo --- */
   "ga.title": "Analytics & SEO",
   "ga.subtitle": "radiocom.uz organic performance",
@@ -298,7 +291,6 @@ const en = {
   "ga.landingPage": "Landing page",
   "ga.rawMetrics": "Raw site metrics",
   "ga.rawCount": "{n} row(s) from the workbook",
-  "ga.aiContext": "organic search and site analytics",
   "ga.intent.I": "Informational",
   "ga.intent.N": "Navigational",
   "ga.intent.C": "Commercial",
@@ -384,16 +376,6 @@ const en = {
   "olx.uncategorised": "Uncategorised",
   "olx.noMatch": "No listings match this search.",
   "olx.noViews": "No views recorded.",
-  "olx.aiContext": "the OLX marketplace listings",
-
-  /* --- ai panel --- */
-  "ai.title": "AI strategy read",
-  "ai.hint": "Analyses {context} exactly as filtered above.",
-  "ai.run": "Analyse this view",
-  "ai.rerun": "Regenerate",
-  "ai.running": "Analysing…",
-  "ai.placeholder":
-    "Generates an executive summary and two recommendations from the numbers currently on screen.",
 } as const;
 
 export type Key = keyof typeof en;
@@ -447,7 +429,6 @@ const ru: Record<Key, string> = {
   "common.stage": "Этап",
   "common.allQuartersCombined": "Все кварталы вместе",
   "common.allQuartersNote": "Все кварталы, независимо от фильтра выше",
-  "common.advisory": "Рекомендации",
   "common.snapshot": "срез",
   "common.rows": "строк: {n}",
   "common.ofPrevious": "{v} от предыдущего",
@@ -525,8 +506,6 @@ const ru: Record<Key, string> = {
   "ov.noPaidSpend": "В таблице нет платных расходов.",
   "ov.noQuarters": "Кварталы не найдены.",
   "ov.noRankable": "Ни один канал не сообщает одновременно расходы и конверсии.",
-  "ov.aiContext": "сводную картину по всем каналам",
-
   "meta.title": "Meta Ads",
   "meta.subtitle": "Платно — Facebook и Instagram",
   "meta.spendEfficiency": "Расходы и эффективность",
@@ -555,8 +534,6 @@ const ru: Record<Key, string> = {
   "meta.fullDetail": "Подробные данные",
   "meta.postEng": "Вовлечение",
   "meta.messages": "Сообщения",
-  "meta.aiContext": "платные результаты Meta Ads",
-
   "gads.title": "Google Ads",
   "gads.subtitle": "Поиск, медийная сеть и видео",
   "gads.accountTotals": "Итоги по аккаунту",
@@ -580,8 +557,6 @@ const ru: Record<Key, string> = {
   "gads.rowsInView": "строк кампаний: {n}",
   "gads.noRows": "В таблице нет строк Google Ads.",
   "gads.noCost": "За этот период затрат нет.",
-  "gads.aiContext": "результаты Google Ads",
-
   "ga.title": "Аналитика и SEO",
   "ga.subtitle": "Органические результаты radiocom.uz",
   "ga.siteEngagement": "Вовлечённость на сайте",
@@ -639,7 +614,6 @@ const ru: Record<Key, string> = {
   "ga.landingPage": "Целевая страница",
   "ga.rawMetrics": "Исходные показатели сайта",
   "ga.rawCount": "строк из таблицы: {n}",
-  "ga.aiContext": "органический поиск и аналитику сайта",
   "ga.intent.I": "Информационный",
   "ga.intent.N": "Навигационный",
   "ga.intent.C": "Коммерческий",
@@ -723,15 +697,6 @@ const ru: Record<Key, string> = {
   "olx.uncategorised": "Без категории",
   "olx.noMatch": "По этому запросу объявлений нет.",
   "olx.noViews": "Просмотров нет.",
-  "olx.aiContext": "объявления на маркетплейсе OLX",
-
-  "ai.title": "ИИ-анализ стратегии",
-  "ai.hint": "Анализирует {context} ровно в том виде, как отфильтровано выше.",
-  "ai.run": "Проанализировать",
-  "ai.rerun": "Сгенерировать заново",
-  "ai.running": "Анализируем…",
-  "ai.placeholder":
-    "Формирует краткую сводку для руководства и две рекомендации на основе цифр, показанных на экране.",
 };
 
 const uz: Record<Key, string> = {
@@ -783,7 +748,6 @@ const uz: Record<Key, string> = {
   "common.stage": "Bosqich",
   "common.allQuartersCombined": "Barcha choraklar birga",
   "common.allQuartersNote": "Yuqoridagi filtrdan qat'i nazar, barcha choraklar",
-  "common.advisory": "Tavsiyalar",
   "common.snapshot": "kesim",
   "common.rows": "qatorlar: {n}",
   "common.ofPrevious": "{v} oldingidan",
@@ -861,8 +825,6 @@ const uz: Record<Key, string> = {
   "ov.noPaidSpend": "Jadvalda pullik xarajat topilmadi.",
   "ov.noQuarters": "Choraklar aniqlanmadi.",
   "ov.noRankable": "Hech bir kanal ham xarajat, ham konversiyani birga bermagan.",
-  "ov.aiContext": "barcha kanallar bo'yicha jamlangan ko'rinishni",
-
   "meta.title": "Meta Ads",
   "meta.subtitle": "Pullik — Facebook va Instagram",
   "meta.spendEfficiency": "Xarajat va samaradorlik",
@@ -891,8 +853,6 @@ const uz: Record<Key, string> = {
   "meta.fullDetail": "To'liq ma'lumot",
   "meta.postEng": "Faollik",
   "meta.messages": "Xabarlar",
-  "meta.aiContext": "Meta Ads pullik natijalarini",
-
   "gads.title": "Google Ads",
   "gads.subtitle": "Qidiruv, displey va video",
   "gads.accountTotals": "Akkaunt bo'yicha jami",
@@ -916,8 +876,6 @@ const uz: Record<Key, string> = {
   "gads.rowsInView": "kampaniya qatorlari: {n}",
   "gads.noRows": "Jadvalda Google Ads qatorlari yo'q.",
   "gads.noCost": "Bu davrda xarajat qayd etilmagan.",
-  "gads.aiContext": "Google Ads natijalarini",
-
   "ga.title": "Analitika va SEO",
   "ga.subtitle": "radiocom.uz organik natijalari",
   "ga.siteEngagement": "Saytdagi faollik",
@@ -975,7 +933,6 @@ const uz: Record<Key, string> = {
   "ga.landingPage": "Kirish sahifasi",
   "ga.rawMetrics": "Sayt bo'yicha xom ko'rsatkichlar",
   "ga.rawCount": "jadvaldan qatorlar: {n}",
-  "ga.aiContext": "organik qidiruv va sayt analitikasini",
   "ga.intent.I": "Axborot",
   "ga.intent.N": "Navigatsion",
   "ga.intent.C": "Tijorat",
@@ -1059,15 +1016,6 @@ const uz: Record<Key, string> = {
   "olx.uncategorised": "Kategoriyasiz",
   "olx.noMatch": "Bu so'rov bo'yicha e'lonlar yo'q.",
   "olx.noViews": "Ko'rishlar yo'q.",
-  "olx.aiContext": "OLX marketpleysidagi e'lonlarni",
-
-  "ai.title": "Sun'iy intellekt tahlili",
-  "ai.hint": "{context} yuqoridagi filtr bo'yicha aynan shu holatda tahlil qiladi.",
-  "ai.run": "Tahlil qilish",
-  "ai.rerun": "Qayta yaratish",
-  "ai.running": "Tahlil qilinmoqda…",
-  "ai.placeholder":
-    "Ekranda ko'rinayotgan raqamlar asosida rahbariyat uchun qisqa xulosa va ikkita tavsiya tayyorlaydi.",
 };
 
 const DICT: Record<Lang, Record<Key, string>> = { en, ru, uz };

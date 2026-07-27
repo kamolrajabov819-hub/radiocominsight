@@ -7,7 +7,6 @@ import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule, Note } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
-import { AiPanel } from "@/components/ai-panel";
 import { FunnelSteps, HBarRanking, PartToWhole, SERIES, StageBars } from "@/components/charts";
 import { Input } from "@/components/ui/input";
 import { useData } from "@/lib/data-context";
@@ -419,29 +418,6 @@ function OlxPage() {
           maxHeight="40rem"
         />
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel
-        context={t("olx.aiContext")}
-        payload={{
-          scope: q ? `filtered by "${q}"` : "all listings",
-          totals: { ...totals, contactRatePct: contactRate, listings: products.length },
-          byCategory,
-          topByViews: products
-            .slice()
-            .sort((a, b) => b.views - a.views)
-            .slice(0, 15)
-            .map((p) => ({
-              name: p.name,
-              category: p.category,
-              price: p.price,
-              views: p.views,
-              favorites: p.favorites,
-              phoneClicks: p.phoneClicks,
-              contactRatePct: p.ctrPct,
-            })),
-        }}
-      />
     </AppShell>
   );
 }

@@ -18,7 +18,6 @@ import { ExportButton } from "@/components/export-button";
 import { ChartFrame } from "@/components/chart-frame";
 import { SectionRule } from "@/components/panel";
 import { DataTable, type Column } from "@/components/data-table";
-import { AiPanel } from "@/components/ai-panel";
 import {
   ChartTooltip,
   PartToWhole,
@@ -571,25 +570,6 @@ function MetaAdsPage() {
           initialSort={{ key: "period", dir: "desc" }}
         />
       </div>
-
-      <SectionRule label={t("common.advisory")} />
-      <AiPanel
-        context={t("meta.aiContext")}
-        payload={{
-          period: quarter?.label ?? "all time",
-          comparedWith: previousQuarter?.label ?? null,
-          totals: {
-            ...s,
-            cpl: cpl(s.spend, s.leads),
-            ctrPct: ctr(s.clicks, s.impressions),
-            cpc: cpc(s.spend, s.clicks),
-            cpm: cpm(s.spend, s.impressions),
-            frequency: frequency(s.impressions, s.reach),
-          },
-          previousTotals: prev,
-          byQuarter,
-        }}
-      />
     </AppShell>
   );
 }
