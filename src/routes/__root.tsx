@@ -13,6 +13,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Suspense } from "react";
 import { DataProvider, allTabsQuery } from "@/lib/data-context";
+import { ThemeProvider } from "@/components/theme";
+import { LanguageProvider, readLang, type Lang } from "@/lib/i18n";
+import { RadiocomMark } from "@/components/brand";
 
 function NotFoundComponent() {
   return (
@@ -75,27 +78,56 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: ({ context }) => {
+  loader: ({ context }): { lang: Lang } => {
     void context.queryClient.ensureQueryData(allTabsQuery);
+    // Resolved from the cookie on the server so SSR emits the right language.
+    return { lang: readLang() };
   },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Overview — Radiocom Analytics Hub" },
-      { name: "description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
+      {
+        name: "description",
+        content:
+          "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Overview — Radiocom Analytics Hub" },
-      { property: "og:description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
+      {
+        property: "og:description",
+        content:
+          "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Overview — Radiocom Analytics Hub" },
-      { name: "twitter:description", content: "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/5c720f81-8e05-40b6-904b-a4e08dfa7539" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/5c720f81-8e05-40b6-904b-a4e08dfa7539" },
+      {
+        name: "twitter:description",
+        content:
+          "Blended cross-channel view of Radiocom marketing performance across Meta, Google, and OLX.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/5c720f81-8e05-40b6-904b-a4e08dfa7539",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/5c720f81-8e05-40b6-904b-a4e08dfa7539",
+      },
     ],
     links: [
+      { rel: "icon", href: "/radiocom-logo.svg", type: "image/svg+xml" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,600..800;1,700..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -110,7 +142,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={readLang()}>
       <head>
         <HeadContent />
       </head>
@@ -124,14 +156,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { lang } = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={<LoadingScreen />}>
-        <DataProvider>
-          <Outlet />
-        </DataProvider>
-      </Suspense>
+      <ThemeProvider>
+        <LanguageProvider initial={lang}>
+          <Suspense fallback={<LoadingScreen />}>
+            <DataProvider>
+              <Outlet />
+            </DataProvider>
+          </Suspense>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
@@ -139,9 +176,9 @@ function RootComponent() {
 function LoadingScreen() {
   return (
     <div className="grid min-h-screen place-items-center bg-background text-muted-foreground">
-      <div className="flex items-center gap-3 text-sm">
-        <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-        Loading Radiocom analytics…
+      <div className="flex flex-col items-center gap-3">
+        <RadiocomMark className="h-10 w-10 animate-pulse" />
+        <p className="eyebrow">Reading the Insights workbook…</p>
       </div>
     </div>
   );

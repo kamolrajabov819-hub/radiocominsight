@@ -1,0 +1,28 @@
+# Netlify build configuration.
+#
+# Publish directory is `dist`, not `dist/client`. TanStack Start builds through
+# Nitro, and Nitro switches to its `netlify` preset automatically on Netlify
+# (the NETLIFY env var). That preset splits the output in two:
+#
+#   dist/                                static assets (+ _headers)
+#   .netlify/functions-internal/server/  the SSR handler
+#
+# The generated `.netlify/functions-internal/nitro.json` states the static path
+# explicitly as "publicDir": "../../dist", which resolves to `dist`.
+#
+# There is deliberately no `_redirects` entry and no [[redirects]] block here.
+# Nitro emits an empty `dist/_redirects` because routing is declared in-source
+# on the handler itself (.netlify/functions-internal/server/server.mjs):
+#
+#   export const config = { path: "/*", excludedPath: ["/.netlify/*"],
+#                           preferStatic: true, ... }
+#
+# Netlify picks that up through the Frameworks API, so static files are served
+# from `dist` and every other request falls through to the SSR function.
+#
+# Note: `dist` contains no index.html — this is a server-rendered app, so
+# publishing it as a plain static site would 404 on every route.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
